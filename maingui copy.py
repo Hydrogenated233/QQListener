@@ -273,11 +273,20 @@ class SettingsWindow(QWidget):
         self.duration_important.setRange(1000, 30000)
         self.duration_important.setValue(self.data.get("Duration_Important", 10000))
 
+        self.tts = QCheckBox("全局 TTS 开关")
+        self.tts.setChecked(self.data.get("TTS", True))
+        self.edge_tts = QCheckBox("使用新版 Edge TTS")
+        self.edge_voice = QLineEdit(self.data.get("Edge_Voice", "zh-CN-XiaoxiaoNeural"))
         form.addRow(self.auto_thumb)
         form.addRow(self.always_on_top)
         form.addRow("最大等待缩略图时间", self.max_wait)
         form.addRow("普通通知时长(ms)", self.duration_everyone)
         form.addRow("重要通知时长(ms)", self.duration_important)
+        form.addRow(
+            self.edge_tts,
+            QLabel("Edge TTS 需要联网，但可自定义效果，若不勾选使用系统自带 TTS"),
+        )
+        form.addRow("EdgeTTS 音色", self.edge_voice)
 
         return widget
 

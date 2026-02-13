@@ -1,7 +1,7 @@
 {
     "Sender": "BSOD-MEMZ的科技交流群",
-    "Message": "Sylphy：sk名言",
-    "Duration": 5000,
+    "Message": "Sylphy：测试信息",
+    "Duration": 50000,
     "OK_btn": "UIA自动回复收到",
     "File_btn": "查看文件",
     "Cancel_btn": "关闭",
@@ -9,5 +9,5 @@
     "icon_file": "asset/pdf.png",
     "icon_cancel": "asset/icon_cancel.png",
     "Priority": 0,
-    "Calling": false
+    "Calling": true
 }
