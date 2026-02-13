@@ -20,6 +20,7 @@
     ],
     "Sound_Effect_Normal": "D:/QQListener/asset/notify_sound.mp3",
     "Sound_Effect_Important": "D:/QQListener/asset/important_sound.mp3",
+    "Sound_Calling": "D:/QQListener/asset/calling_sound.mp3",
     "Auto_Show_Thumb": true,
     "icon_ok": "asset/icon_ok.png",
     "icon_cancel": "asset/icon_cancel.png",
@@ -32,5 +33,11 @@
     "Notify_Shadow": true,
     "Notify_Animation": true,
     "Notify_Label": "xxtsoft QQListener",
-    "Someone_At_Me": true
+    "Someone_At_Me": true,
+    "TTS": true,
+    "Edge_TTS": true,
+    "Edge_Voice": "zh-CN-XiaoyiNeural",
+    "Edge_Rate": "+0%",
+    "Edge_Pitch": "+10Hz",
+    "Edge_Volume": "+0%"
 }

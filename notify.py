@@ -1,9 +1,18 @@
 import json
 import os
+import subprocess
 import sys
 
 import pygame
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer, QUrl
+from PySide6.QtCore import (
+    QEasingCurve,
+    QPropertyAnimation,
+    Qt,
+    QThread,
+    QTimer,
+    QUrl,
+    Signal,
+)
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -310,6 +319,7 @@ class FluentNotifyWindow(QWidget):
             QTimer.singleShot(self.duration, self.close_animation)
 
     def close_animation(self):
+        pygame.mixer.music.stop()
         anim = QPropertyAnimation(self, b"windowOpacity")
         anim.setDuration(300)
         anim.setStartValue(self.windowOpacity())
@@ -323,7 +333,60 @@ class FluentNotifyWindow(QWidget):
         self.close_animation()
 
 
+class TTSThread(QThread):
+    finished_signal = Signal(str)
+
+    def __init__(self, text):
+        super().__init__()
+        self.text = text
+
+    def run(self):
+        try:
+            OUTPUT_FILE = "tts_temp.mp3"
+
+            VOICE = setting.get("Edge_Voice", "zh-CN-XiaoyiNeural")
+            RATE = setting.get("Edge_Rate", "+0%")
+            PITCH = setting.get("Edge_Pitch", "+0Hz")
+            VOLUME = setting.get("Edge_Volume", "+0%")
+
+            safe_text = self.text.replace('"', "'")
+
+            cmd = (
+                f"edge-tts "
+                f'--voice "{VOICE}" '
+                f'--rate "{RATE}" '
+                f'--pitch "{PITCH}" '
+                f'--volume "{VOLUME}" '
+                f'--text "{safe_text}" '
+                f'--write-media "{OUTPUT_FILE}"'
+            )
+
+            subprocess.run(cmd, shell=True, check=True)
+
+            self.finished_signal.emit(OUTPUT_FILE)
+
+        except Exception as e:
+            print("Edge TTS 线程错误:", e)
+
+
 if __name__ == "__main__":
+
+    def play_tts():
+        if not setting.get("TTS", False):
+            return
+
+        text = config_data.get("Message", "")
+
+        if setting.get("Edge_TTS", False):
+            win.tts_thread = TTSThread(text)
+
+            def on_tts_ready(file_path):
+                tts_sound = pygame.mixer.Sound(file_path)
+                tts_sound.play()
+
+            win.tts_thread.finished_signal.connect(on_tts_ready)
+            win.tts_thread.start()
+
     app = QApplication(sys.argv)
     base_path = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(base_path, JSON_FILE)
@@ -339,11 +402,16 @@ if __name__ == "__main__":
 
         win.bg_widget.setGraphicsEffect(shadow)
     pygame.mixer.init()
-    if config_data.get("Priority") == 0:
-        pygame.mixer.music.load(setting["Sound_Effect_Important"])
-    else:
-        pygame.mixer.music.load(setting["Sound_Effect_Normal"])
-    pygame.mixer.music.play()
     win.show()
+    QTimer.singleShot(0, play_tts)
+    if config_data.get("Calling"):
+        pygame.mixer.music.load(setting["Sound_Calling"])
+        pygame.mixer.music.play(-1)
+    else:
+        if config_data.get("Priority") == 0:
+            pygame.mixer.music.load(setting["Sound_Effect_Important"])
+        else:
+            pygame.mixer.music.load(setting["Sound_Effect_Normal"])
+        pygame.mixer.music.play()
 
     sys.exit(app.exec())

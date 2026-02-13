@@ -298,6 +298,7 @@ class SettingsWindow(QWidget):
         row1.addWidget(self.sound_normal)
         row1.addWidget(btn1)
         row1.addWidget(btn3)
+
         self.sound_important = QLineEdit(self.data.get("Sound_Effect_Important", ""))
         btn2 = QPushButton("浏览")
         btn2.clicked.connect(lambda: self.select_file(self.sound_important))
@@ -309,9 +310,19 @@ class SettingsWindow(QWidget):
         row2.addWidget(btn2)
         row2.addWidget(btn4)
 
+        self.sound_calling = QLineEdit(self.data.get("Sound_Calling", ""))
+        btn5 = QPushButton("浏览")
+        btn5.clicked.connect(lambda: self.select_file(self.sound_calling))
+        btn6 = QPushButton("试听")
+        btn6.clicked.connect(lambda: self.test_file(self.sound_calling))
+
+        row3 = QHBoxLayout()
+        row3.addWidget(self.sound_calling)
+        row3.addWidget(btn5)
+        row3.addWidget(btn6)
         form.addRow("普通提示音", row1)
         form.addRow("重要提示音", row2)
-
+        form.addRow("呼叫提示音", row3)
         return widget
 
     # ==============================
