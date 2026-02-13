@@ -158,7 +158,10 @@ class FluentNotifyWindow(QWidget):
         self.duration = data.get("Duration", 5000)
         self.animations = []
         self.init_ui()
-        self.init_animation()
+        if setting.get("Notify_Animation", True):
+            self.init_animation()
+        else:
+            self.setWindowOpacity(1)
 
     def init_ui(self):
         # 1. 基础窗口设置
@@ -321,13 +324,14 @@ if __name__ == "__main__":
     with open(json_path, "r", encoding="utf-8") as f:
         config_data = json.load(f)
     win = FluentNotifyWindow(config_data)
-    shadow = QGraphicsDropShadowEffect()
-    shadow.setBlurRadius(50)
-    shadow.setXOffset(0)
-    shadow.setYOffset(0)
-    shadow.setColor(QColor(0, 0, 0, 200))
+    if setting.get("Notify_Shadow", True):
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(50)
+        shadow.setXOffset(0)
+        shadow.setYOffset(0)
+        shadow.setColor(QColor(0, 0, 0, 200))
 
-    win.bg_widget.setGraphicsEffect(shadow)
+        win.bg_widget.setGraphicsEffect(shadow)
     pygame.mixer.init()
     if config_data.get("Priority") == 0:
         pygame.mixer.music.load(setting["Sound_Effect_Important"])

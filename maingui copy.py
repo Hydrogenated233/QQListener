@@ -149,7 +149,9 @@ class SettingsWindow(QWidget):
 
         self.language_combo = QComboBox()
         self.language_combo.addItems(["English", "日本語", "简体中文"])
-        self.language_combo.currentIndexChanged
+        self.language_combo.currentIndexChanged.connect(
+            lambda: self.on_language_changed(self.language_combo)
+        )
         form.addRow("扫描间隔 (秒)", self.scan_interval)
         form.addRow("冷却时间 (秒)", self.cooldown)
         form.addRow("QQ 号", self.user_qq)
@@ -384,6 +386,11 @@ class SettingsWindow(QWidget):
             app.setStyle("windows")
         else:
             apply_stylesheet(app, theme=selected)
+
+    def on_language_changed(self, widget):
+        selected = widget.currentText()
+        print(selected)
+        # TODO 语言切换功能（学了半年日语小李还没出机场）
 
 
 if __name__ == "__main__":
