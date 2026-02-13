@@ -1,13 +1,13 @@
 {
-    "Sender": "切り取り領域をクリップボードに保存しました",
-    "Message": "画像をマークアップして共有するには、ここを選択してください",
-    "Duration": 3000,
+    "Sender": "BSOD-MEMZ的科技交流群",
+    "Message": "Sylphy：sk名言",
+    "Duration": 5000,
     "OK_btn": "UIA自动回复收到",
     "File_btn": "查看文件",
     "Cancel_btn": "关闭",
     "icon_ok": "asset/icon_ok.png",
     "icon_file": "asset/pdf.png",
     "icon_cancel": "asset/icon_cancel.png",
-    "Priority": 1,
+    "Priority": 0,
     "Calling": false
 }
