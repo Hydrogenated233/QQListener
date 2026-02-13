@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
 from qt_material import apply_stylesheet
 
 SETTING_FILE = "setting.json"
-material = True
 
 
 # ==============================
@@ -180,6 +179,9 @@ class SettingsWindow(QWidget):
         self.list_black = self.create_list(self.data.get("BlackList", []))
         layout.addWidget(self.list_black)
 
+        self.someone_at_me = QCheckBox("当 [有人@我] 时将通知优先级设为最高")
+        self.someone_at_me.setChecked(self.data.get("Someone_At_Me", True))
+        layout.addWidget(self.someone_at_me)
         return widget
 
     # ==============================
@@ -217,11 +219,32 @@ class SettingsWindow(QWidget):
                 "light_yellow.xml",
             ]
         )
-        self.theme_setting_combo.setCurrentText(self.data.get("Theme", "Fusion"))
+        self.theme_setting_combo.setCurrentText(
+            self.data.get("Theme_Setting_Combo", "Fusion")
+        )
         self.theme_setting_combo.currentIndexChanged.connect(
             lambda: self.on_setting_theme_changed(self.theme_setting_combo)
         )
         layout.addWidget(self.theme_setting_combo)
+        layout.addWidget(QLabel("通知样式"))
+        self.theme_notify_combo = QComboBox()
+        self.theme_notify_combo.addItems(["FluentDark", "FluentLight", "Material"])
+        self.theme_notify_combo.setCurrentText(
+            self.data.get("Theme_Notify_Combo", "FluentDark")
+        )
+
+        self.notify_shadow = QCheckBox("通知窗口启用阴影")
+        self.notify_shadow.setChecked(self.data.get("Notify_Shadow", True))
+        self.notify_animation = QCheckBox("通知窗口启用动画")
+        self.notify_animation.setChecked(self.data.get("Notify_Animation", True))
+        self.notify_label = QLineEdit(
+            self.data.get("Notify_Label", "xxtsoft QQListener")
+        )
+        layout.addWidget(self.notify_shadow)
+        layout.addWidget(self.notify_animation)
+        layout.addWidget(self.theme_notify_combo)
+        layout.addWidget(QLabel("通知下方显示文本（可留空）"))
+        layout.addWidget(self.notify_label)
         layout.addStretch()
         return widget
 
@@ -396,10 +419,16 @@ class SettingsWindow(QWidget):
 if __name__ == "__main__":
     pygame.mixer.init()
     app = QApplication(sys.argv)
-    if material:
-        apply_stylesheet(app, theme="dark_teal.xml")
-    else:
-        app.setStyle("windows11")
+
     win = SettingsWindow()
+    selected = win.data.get("Theme_Setting_Combo")
+    if selected == "Fusion":
+        app.setStyle("Fusion")
+    elif selected == "Windows11":
+        app.setStyle("windows11")
+    elif selected == "Windows9x":
+        app.setStyle("windows")
+    else:
+        apply_stylesheet(app, theme=selected)
     win.show()
     sys.exit(app.exec())

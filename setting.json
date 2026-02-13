@@ -28,6 +28,9 @@
     "Always_On_Top": true,
     "Max_Wait_Thumb_Time": 5,
     "Theme_Setting_Combo": "Fusion",
+    "Theme_Notify_Combo": "FluentDark",
     "Notify_Shadow": true,
-    "Notify_Animation": true
+    "Notify_Animation": true,
+    "Notify_Label": "xxtsoft QQListener",
+    "Someone_At_Me": true
 }

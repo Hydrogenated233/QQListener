@@ -176,7 +176,7 @@ def process_notification(texts):
     # ==============================
     # ⭐ 图片分支（时间戳版本）
     # ==============================
-
+    notify.pop("Pic_Path", None)
     if "[图片]" in notify["Message"]:
         print("🟡 进入图片分支")
 
@@ -289,7 +289,10 @@ async def run_winsdk_mode():
     print("🚀 WinSDK 模式启动")
 
     known_ids = set()
-
+    initial_notifs = await listener.get_notifications_async(
+        notifications.NotificationKinds.TOAST
+    )
+    known_ids = {n.id for n in initial_notifs}
     while True:
         try:
             notifs = await listener.get_notifications_async(

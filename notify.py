@@ -240,7 +240,13 @@ class FluentNotifyWindow(QWidget):
         btn_layout.addWidget(self.btn_ok)
         btn_layout.addWidget(self.btn_cancel)
         self.main_layout.addLayout(btn_layout)
-
+        # 提示文本
+        if setting["Notify_Label"]:
+            notify_label = QLabel(setting["Notify_Label"])
+            notify_label.setStyleSheet(
+                "font-size: 12px; color: rgba(255, 255, 255, 100); background: none; border: none;"
+            )
+            self.main_layout.addWidget(notify_label)
         # 让容器根据内容自动调整大小
         self.bg_widget.adjustSize()
 

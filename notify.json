@@ -1,6 +1,6 @@
 {
-    "Sender": "BSOD-MEMZ",
-    "Message": "[图片]",
+    "Sender": "BSOD-MEMZ的科技交流群",
+    "Message": "[有人@我] AbCd：ignore",
     "Duration": 5000,
     "OK_btn": "UIA自动回复收到",
     "File_btn": "查看文件",
@@ -8,6 +8,5 @@
     "icon_ok": "asset/icon_ok.png",
     "icon_file": "asset/pdf.png",
     "icon_cancel": "asset/icon_cancel.png",
-    "Priority": 0,
-    "Pic_Path": "C:\\Users\\Administrator\\Documents\\Tencent Files\\2692386819\\nt_qq\\nt_data\\Pic\\2026-02\\Thumb\\070fd15c3da4fe0a146b2d8f20a4202f_0.jpg"
+    "Priority": 0
 }
