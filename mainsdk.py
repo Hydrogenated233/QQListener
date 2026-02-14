@@ -48,7 +48,7 @@ Thumb = (
 print("📂 Thumb目录:", Thumb)
 
 
-def find_new_thumb(timeout=8):
+def find_new_thumb(timeout=setting["Max_Wait_Thumb_Time"]):
     global last_file_mtime
 
     start_time = time.time()
@@ -157,13 +157,15 @@ def process_notification(texts):
 
     seen[key] = now
     active_toasts.add(key)
-
-    notify["Duration"] = (
-        5000
-        if any(p in texts[0] for p in important_persons)
-        or any(k in "\n".join(texts[1:]) for k in important_keywords)
-        else 3000
-    )
+    important = False
+    if any(p in texts[0] for p in important_persons) or any(
+        k in "\n".join(texts[1:]) for k in important_keywords
+    ):
+        temp = setting.get("Duration_Important", 10000)
+        important = True
+    else:
+        temp = setting.get("Duration_Everyone", 5000)
+    notify["Duration"] = temp
 
     notify["icon_ok"] = "asset/icon_ok.png"
     notify["icon_file"] = "asset/pdf.png"
@@ -171,13 +173,13 @@ def process_notification(texts):
 
     notify["Sender"] = texts[0]
     notify["Message"] = "\n".join(texts[1:])
-    notify["Priority"] = 0 if notify["Duration"] == 5000 else 1
+    notify["Priority"] = 0 if important else 1
 
     # ==============================
     # ⭐ 图片分支（时间戳版本）
     # ==============================
     notify.pop("Pic_Path", None)
-    if "[图片]" in notify["Message"]:
+    if "[图片]" in notify["Message"] and setting["Thumb"]:
         print("🟡 进入图片分支")
 
         activate_qq()

@@ -327,6 +327,7 @@ class FluentNotifyWindow(QWidget):
         anim.finished.connect(self.close)
         anim.start()
         self.animations.append(anim)
+        anim.finished.connect(QApplication.instance().quit)
 
     def on_ok(self):
         print(f"用户点击了确认: {self.data.get('Sender')}")

@@ -1,8 +1,12 @@
 import json
 import os
+import subprocess
 import sys
+import time
 
 import pygame
+import pyttsx3
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -16,6 +20,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QMessageBox,
     QPushButton,
+    QSlider,
     QSpinBox,
     QTabWidget,
     QVBoxLayout,
@@ -97,12 +102,17 @@ class SettingsWindow(QWidget):
         self.tabs.addTab(self.create_rule_tab(), "规则")
         self.tabs.addTab(self.create_appearance_tab(), "外观")
         self.tabs.addTab(self.create_notify_tab(), "通知")
+        self.tabs.addTab(self.create_calling_tab(), "呼叫")
         self.tabs.addTab(self.create_sound_tab(), "声音")
         self.tabs.addTab(self.create_about_tab(), "关于")
 
         btn_save = QPushButton("保存设置")
+        btn_test = QPushButton("测试弹窗")
+        buttom_layout = QHBoxLayout()
+        buttom_layout.addWidget(btn_save)
+        buttom_layout.addWidget(btn_test)
         btn_save.clicked.connect(self.save_settings)
-        layout.addWidget(btn_save)
+        layout.addLayout(buttom_layout)
 
     # ==============================
     # 基本
@@ -273,21 +283,94 @@ class SettingsWindow(QWidget):
         self.duration_important.setRange(1000, 30000)
         self.duration_important.setValue(self.data.get("Duration_Important", 10000))
 
-        self.tts = QCheckBox("全局 TTS 开关")
+        self.tts = QCheckBox("全局 TTS（语音播报） 开关")
         self.tts.setChecked(self.data.get("TTS", True))
-        self.edge_tts = QCheckBox("使用新版 Edge TTS")
-        self.edge_voice = QLineEdit(self.data.get("Edge_Voice", "zh-CN-XiaoxiaoNeural"))
+        self.tts.checkStateChanged.connect(self.on_tts_changed)
+        self.edge_tts = QCheckBox("使用新版 EdgeTTS")
+        self.edge_tts.setChecked(self.data.get("Edge_TTS", True))
+        self.edge_voice = QComboBox()
+        self.edge_voice.setEditable(True)
+        voices = [
+            "zh-CN-XiaoxiaoNeural",
+            "zh-CN-YunxiNeural",
+            "zh-CN-YunjianNeural",
+            "ja-JP-NanamiNeural",
+            "ja-JP-KeitaNeural",
+            "en-US-JennyNeural",
+        ]
+
+        self.edge_voice.addItems(voices)
+        current_voice = self.data.get("Edge_Voice", "zh-CN-XiaoxiaoNeural")
+        if current_voice not in voices:
+            self.edge_voice.addItem(current_voice)
+        self.edge_voice.setCurrentText(current_voice)
+        self.edge_voice.setEnabled(self.edge_tts.isChecked())
+        self.edge_rate = QSlider(Qt.Horizontal)
+        self.edge_rate.setRange(-100, 100)
+
+        rate_str = self.data.get("Edge_Rate", "+0%")
+        rate_value = int(rate_str.replace("%", "").replace("+", ""))
+        self.edge_rate.setValue(rate_value)
+
+        self.edge_rate.setEnabled(self.edge_tts.isChecked())
+        self.edge_pitch = QSlider(Qt.Horizontal)
+        self.edge_pitch.setRange(-100, 100)
+
+        pitch_str = self.data.get("Edge_Pitch", "+0Hz")
+        pitch_value = int(pitch_str.replace("Hz", "").replace("+", ""))
+        self.edge_pitch.setValue(pitch_value)
+
+        self.edge_pitch.setEnabled(self.edge_tts.isChecked())
+
+        self.edge_volume = QSlider(Qt.Horizontal)
+        self.edge_volume.setRange(-100, 100)
+
+        vol_str = self.data.get("Edge_Volume", "+0%")
+        vol_value = int(vol_str.replace("%", "").replace("+", ""))
+        self.edge_volume.setValue(vol_value)
+
+        self.edge_volume.setEnabled(self.edge_tts.isChecked())
+
+        self.edge_test_text = QLineEdit("你好呀，这里是 EdgeTTS 酱哦~")
+        self.edge_test_layout = QHBoxLayout()
+        self.edge_test_btn = QPushButton("试听")
+        self.edge_test_btn.clicked.connect(self.on_edge_test)
+        self.edge_test_layout.addWidget(self.edge_test_text)
+        self.edge_test_layout.addWidget(self.edge_test_btn)
+
         form.addRow(self.auto_thumb)
         form.addRow(self.always_on_top)
         form.addRow("最大等待缩略图时间", self.max_wait)
         form.addRow("普通通知时长(ms)", self.duration_everyone)
         form.addRow("重要通知时长(ms)", self.duration_important)
+        form.addRow(self.tts)
         form.addRow(
             self.edge_tts,
-            QLabel("Edge TTS 需要联网，但可自定义效果，若不勾选使用系统自带 TTS"),
+            QLabel("EdgeTTS 需要联网，但可自定义效果，若不勾选使用系统自带 TTS"),
         )
         form.addRow("EdgeTTS 音色", self.edge_voice)
+        form.addRow("EdgeTTS 语速", self.edge_rate)
+        form.addRow("EdgeTTS 音高", self.edge_pitch)
+        form.addRow("EdgeTTS 音量", self.edge_volume)
+        form.addRow("测试 TTS", self.edge_test_layout)
+        return widget
 
+    # ==============================
+    # 呼叫
+    # ==============================
+    def create_calling_tab(self):
+        widget = QWidget()
+        form = QFormLayout(widget)
+        self.calling = QCheckBox("允许老师呼叫")
+        self.calling_keyword = QLineEdit("呼叫")
+        self.calling_during = QSpinBox()
+        self.calling_during.setRange(0, 999999)
+        form.addRow(
+            "当老师按一定格式（例如 呼叫XXX，来办公室搬下作业）呼叫，弹出窗口将持续更长时间，并且循环播放铃声直到有人响应。",
+            self.calling,
+        )
+        form.addRow("呼叫关键词", self.calling_keyword)
+        form.addRow("呼叫窗口弹出时间", self.calling_during)
         return widget
 
     # ==============================
@@ -434,6 +517,63 @@ class SettingsWindow(QWidget):
         selected = widget.currentText()
         print(selected)
         # TODO 语言切换功能（学了半年日语小李还没出机场）
+
+    def on_edge_test(self):
+        if self.edge_tts.isChecked:
+            """
+            self.data["Edge_Voice"] = self.edge_voice.currentText()
+self.data["Edge_Rate"] = f"{self.edge_rate.value():+d}%"
+self.data["Edge_Volume"] = f"{self.edge_volume.value():+d}%"
+self.data["Edge_Pitch"] = f"{self.edge_pitch.value():+d}Hz"
+
+            """
+            self.edge_tts_engine(
+                TEXT=self.edge_test_text.text(),
+                VOICE=self.edge_voice.currentText(),
+                PITCH=f"{self.edge_pitch.value():+d}Hz",
+                VOLUME=f"{self.edge_volume.value():+d}%",
+                RATE=f"{self.edge_rate.value():+d}%",
+            )
+        else:
+            engine = pyttsx3.init()
+            engine.setProperty(
+                "voice",
+                r"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_ZH-CN_HUIHUI_11.0",
+            )
+            engine.setProperty("volume", 1)
+            engine.say(self.edge_test_text.text())
+            engine.runAndWait()
+
+    def on_tts_changed(self, state):
+        current = state == Qt.Checked
+
+        self.edge_tts.setEnabled(current)
+        self.edge_pitch.setEnabled(current)
+        self.edge_rate.setEnabled(current)
+        self.edge_test_btn.setEnabled(current)
+        self.edge_test_text.setEnabled(current)
+
+    def edge_tts_engine(self, TEXT, VOICE, RATE, PITCH, VOLUME):
+        OUTPUT_FILE = "tts_output.mp3"
+        cmd = (
+            f"edge-tts "
+            f'--voice "{VOICE}" '
+            f'--rate "{RATE}" '
+            f'--pitch "{PITCH}" '
+            f'--volume "{VOLUME}" '
+            f'--text "{TEXT}" '
+            f'--write-media "{OUTPUT_FILE}"'
+        )
+
+        subprocess.run(cmd, shell=True, check=True)
+        pygame.mixer.init()
+        pygame.mixer.music.load(OUTPUT_FILE)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+
+        pygame.mixer.quit()
+        print("播放完成 🎧")
 
 
 if __name__ == "__main__":

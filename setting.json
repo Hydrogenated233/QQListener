@@ -27,6 +27,7 @@
     "Duration_Everyone": 5000,
     "Duration_Important": 10000,
     "Always_On_Top": true,
+    "Thumb": false,
     "Max_Wait_Thumb_Time": 5,
     "Theme_Setting_Combo": "Fusion",
     "Theme_Notify_Combo": "FluentDark",
