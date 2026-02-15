@@ -32,5 +32,16 @@
     "Theme_Notify_Combo": "FluentDark",
     "Notify_Shadow": true,
     "Notify_Animation": true,
-    "QQ_Only": true
+    "QQ_Only": true,
+    "Notify_Label": "xxtsoft QQListener",
+    "Someone_At_Me": true,
+    "Calling": true,
+    "Calling_Keyword": "呼叫",
+    "Calling_Duration": 600000,
+    "TTS": true,
+    "Edge_TTS": true,
+    "Edge_Voice": "zh-CN-XiaoyiNeural",
+    "Edge_Rate": "+0%",
+    "Edge_Volume": "+0%",
+    "Edge_Pitch": "+10Hz"
 }

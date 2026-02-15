@@ -158,23 +158,38 @@ def process_notification(texts):
     seen[key] = now
     active_toasts.add(key)
     important = False
-    if any(p in texts[0] for p in important_persons) or any(
-        k in "\n".join(texts[1:]) for k in important_keywords
+    calling = False
+    if setting.get("Calling", False) and any(
+        k in "\n".join(texts) for k in setting.get("Calling_Keyword", [])
     ):
-        temp = setting.get("Duration_Important", 10000)
+        temp = setting.get("Calling_Duration", 600000)
         important = True
+        calling = True
     else:
-        temp = setting.get("Duration_Everyone", 5000)
+        if any(p in texts[0] for p in important_persons) or any(
+            k in "\n".join(texts[1:]) for k in important_keywords
+        ):
+            temp = setting.get("Duration_Important", 10000)
+            important = True
+        else:
+            if setting.get("Someone_At_Me", True) and any(
+                p in texts[0] for p in ["有人@我"]
+            ):
+                temp = setting.get("Duration_Important", 10000)
+                important = True
+            else:
+                temp = setting.get("Duration_Everyone", 5000)
     notify["Duration"] = temp
 
-    notify["icon_ok"] = "asset/icon_ok.png"
     notify["icon_file"] = "asset/pdf.png"
-    notify["icon_cancel"] = "asset/icon_cancel.png"
 
     notify["Sender"] = texts[0]
     notify["Message"] = "\n".join(texts[1:])
     notify["Priority"] = 0 if important else 1
-
+    if calling:
+        notify["Calling"] = True
+    else:
+        notify["Calling"] = False
     # ==============================
     # ⭐ 图片分支（时间戳版本）
     # ==============================
@@ -306,6 +321,10 @@ async def run_winsdk_mode():
             for n in notifs:
                 if n.id not in known_ids:
                     try:
+                        if n.app_info.display_info.display_name != "QQ" and setting.get(
+                            "QQ_Only", True
+                        ):
+                            continue
                         visual = n.notification.visual
                         texts = []
 

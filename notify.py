@@ -240,10 +240,10 @@ class FluentNotifyWindow(QWidget):
         btn_layout.setSpacing(10)
 
         self.btn_ok = self.create_button(
-            self.data.get("OK_btn", "确认"), self.data.get("icon_ok")
+            setting.get("OK_btn", "确认"), self.data.get("icon_ok")
         )
         self.btn_cancel = self.create_button(
-            self.data.get("Cancel_btn", "关闭"), self.data.get("icon_cancel")
+            setting.get("Cancel_btn", "关闭"), self.data.get("icon_cancel")
         )
 
         btn_layout.addWidget(self.btn_ok)
