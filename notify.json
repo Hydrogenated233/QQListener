@@ -1,11 +1,9 @@
 {
-    "Sender": "BSOD-MEMZ",
-    "Message": "1",
-    "Duration": 10000,
-    "OK_btn": "UIA自动回复收到",
+    "Sender": "𝒌𝒊𝒏𝒈𝒔𝒕𝒂𝒓",
+    "Message": "现在又好了",
+    "Duration": 5000,
     "File_btn": "查看文件",
-    "Cancel_btn": "关闭",
     "icon_file": "asset/pdf.png",
-    "Priority": 0,
+    "Priority": 1,
     "Calling": false
 }

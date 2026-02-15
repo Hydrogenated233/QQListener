@@ -28,11 +28,11 @@
     "Duration_Important": 10000,
     "Always_On_Top": true,
     "Max_Wait_Thumb_Time": 5,
-    "Theme_Setting_Combo": "Fusion",
+    "Theme_Setting_Combo": "Windows11",
     "Theme_Notify_Combo": "FluentDark",
     "Notify_Shadow": true,
     "Notify_Animation": true,
-    "QQ_Only": true,
+    "QQ_Only": false,
     "Notify_Label": "xxtsoft QQListener",
     "Someone_At_Me": true,
     "Calling": true,
@@ -43,5 +43,13 @@
     "Edge_Voice": "zh-CN-XiaoyiNeural",
     "Edge_Rate": "+0%",
     "Edge_Volume": "+0%",
-    "Edge_Pitch": "+10Hz"
+    "Edge_Pitch": "+10Hz",
+    "Override_qss": false,
+    "Override_Path": "",
+    "Green_Hand": false,
+    "Language": "ja-JP",
+    "Notify_Title_Font": "asset/Font/JingNanBoBoHei-Bold-2.ttf",
+    "Notify_Message_Font": "asset/Font/FZLanTYK.ttf",
+    "OK_btn": "UIA自动回复收到",
+    "Cancel_btn": "关闭"
 }

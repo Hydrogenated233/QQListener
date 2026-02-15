@@ -13,7 +13,7 @@ from PySide6.QtCore import (
     QUrl,
     Signal,
 )
-from PySide6.QtGui import QColor, QDesktopServices, QFont, QPixmap
+from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 setting = json.load(open("setting.json", "r", encoding="utf-8"))
+
 JSON_FILE = "notify.json"
 
 PRIORITY_STYLES = {
@@ -166,6 +167,32 @@ class FluentNotifyWindow(QWidget):
         self.data = data
         self.duration = data.get("Duration", 5000)
         self.animations = []
+        self.font_cache = {}
+
+        def load_font(path, fallback="Segoe UI"):
+            if not os.path.exists(path):
+                print(f"[WARN] 字体文件不存在: {path}")
+                return fallback
+            font_id = QFontDatabase.addApplicationFont(path)
+            if font_id != -1:
+                family = QFontDatabase.applicationFontFamilies(font_id)[0]
+                print(f"[INFO] 字体加载成功: {family}")
+                return family
+            else:
+                print(f"[WARN] 字体加载失败: {path}")
+                return fallback
+
+        self.title_family = load_font(
+            self.data.get(
+                "Notify_Title_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF"
+            )
+        )
+        self.msg_family = load_font(
+            self.data.get(
+                "Notify_Message_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF"
+            )
+        )
+
         self.init_ui()
         if setting.get("Notify_Animation", True):
             self.init_animation()
@@ -174,7 +201,12 @@ class FluentNotifyWindow(QWidget):
 
     def init_ui(self):
         # 1. 基础窗口设置
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        if self.data.get("Always_On_Top", True):
+            self.setWindowFlags(
+                Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+            )
+        else:
+            self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
         # 获取屏幕尺寸，全屏覆盖但背景透明
@@ -206,7 +238,13 @@ class FluentNotifyWindow(QWidget):
 
         # 发送人
         label_sender = QLabel(f"{self.data.get('Sender', '系统通知')}")
-        label_sender.setFont(QFont("Segoe UI Variable", 18, QFont.Bold))
+        label_sender.setFont(
+            QFont(
+                self.title_family,
+                18,
+                QFont.Bold,
+            )
+        )
         label_sender.setStyleSheet(
             "color: white; border: none; background: transparent;"
         )
@@ -214,7 +252,8 @@ class FluentNotifyWindow(QWidget):
 
         # 消息内容
         label_msg = QLabel(self.data.get("Message", ""))
-        label_msg.setFont(QFont("Segoe UI Variable", 13))
+        label_msg.setFont(self.load_font(self.msg_family, 13))
+
         label_msg.setStyleSheet("color: white; border: none; background: transparent;")
         label_msg.setWordWrap(True)
         # 允许内容根据文字自动延展
@@ -240,10 +279,10 @@ class FluentNotifyWindow(QWidget):
         btn_layout.setSpacing(10)
 
         self.btn_ok = self.create_button(
-            setting.get("OK_btn", "确认"), self.data.get("icon_ok")
+            setting.get("OK_btn", "确认"), setting.get("icon_ok")
         )
         self.btn_cancel = self.create_button(
-            setting.get("Cancel_btn", "关闭"), self.data.get("icon_cancel")
+            setting.get("Cancel_btn", "关闭"), setting.get("icon_cancel")
         )
 
         btn_layout.addWidget(self.btn_ok)
@@ -268,10 +307,24 @@ class FluentNotifyWindow(QWidget):
         self.btn_ok.clicked.connect(self.on_ok)
         self.btn_cancel.clicked.connect(self.close_animation)
 
+    def load_font(self, path, size, weight=QFont.Normal):
+        if not path or not os.path.exists(path):
+            return QFont(QApplication.font().family(), size, weight)
+
+        if path not in self.font_cache:
+            font_id = QFontDatabase.addApplicationFont(path)
+            if font_id != -1:
+                family = QFontDatabase.applicationFontFamilies(font_id)[0]
+            else:
+                family = QApplication.font().family()
+            self.font_cache[path] = family
+
+        return QFont(self.font_cache[path], size, weight)
+
     def create_button(self, text, icon_path):
         btn = QPushButton(text)
         if icon_path and os.path.exists(icon_path):
-            btn.setIcon(QPixmap(icon_path))
+            btn.setIcon(QIcon(icon_path))
         btn.setFixedHeight(38)
         btn.setStyleSheet("""
             QPushButton {
@@ -328,6 +381,11 @@ class FluentNotifyWindow(QWidget):
         anim.start()
         self.animations.append(anim)
         anim.finished.connect(QApplication.instance().quit)
+
+    def override_qss(self, qss):
+        with open(qss, "r", encoding="utf-8") as f:
+            qss = f.read()
+        self.setStyleSheet(qss)
 
     def on_ok(self):
         print(f"用户点击了确认: {self.data.get('Sender')}")

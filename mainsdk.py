@@ -159,6 +159,10 @@ def process_notification(texts):
     active_toasts.add(key)
     important = False
     calling = False
+    if setting.get("Blacklist", False) and any(
+        k in "\n".join(texts) for k in setting.get("BlackList", [])
+    ):
+        return
     if setting.get("Calling", False) and any(
         k in "\n".join(texts) for k in setting.get("Calling_Keyword", [])
     ):
@@ -219,11 +223,6 @@ def process_notification(texts):
         print("❌ 弹窗失败:", e)
 
 
-# ==============================
-# UIA模式
-# ==============================
-
-
 def get_uia_toasts():
     desktop = auto.GetRootControl()
     texts_list = []
@@ -266,8 +265,6 @@ def get_uia_toasts():
 
 async def run_uia_mode():
     global active_toasts
-    print("🚀 UIA 模式启动...")
-
     while True:
         try:
             current_found_keys = set()
@@ -282,14 +279,9 @@ async def run_uia_mode():
             active_toasts = {k for k in active_toasts if k in current_found_keys}
 
         except Exception as e:
-            print("⚠️ UIA异常:", e)
+            print("UIA异常:", e)
 
         await asyncio.sleep(SCAN_INTERVAL)
-
-
-# ==============================
-# WinSDK模式
-# ==============================
 
 
 async def run_winsdk_mode():
@@ -300,10 +292,7 @@ async def run_winsdk_mode():
     status = await listener.request_access_async()
 
     if status != mgmt.UserNotificationListenerAccessStatus.ALLOWED:
-        print("❌ 没权限")
         return
-
-    print("🚀 WinSDK 模式启动")
 
     known_ids = set()
     initial_notifs = await listener.get_notifications_async(
@@ -348,14 +337,9 @@ async def run_winsdk_mode():
             known_ids &= current_ids
 
         except Exception as e:
-            print("⚠️ WinSDK异常:", e)
+            print("WinSDK异常:", e)
 
         await asyncio.sleep(0.8)
-
-
-# ==============================
-# 主入口
-# ==============================
 
 
 async def main():
