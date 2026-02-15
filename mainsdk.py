@@ -179,7 +179,7 @@ def process_notification(texts):
     # ⭐ 图片分支（时间戳版本）
     # ==============================
     notify.pop("Pic_Path", None)
-    if "[图片]" in notify["Message"] and setting["Thumb"]:
+    if "[图片]" in notify["Message"] and setting["Auto_Show_Thumb"]:
         print("🟡 进入图片分支")
 
         activate_qq()
