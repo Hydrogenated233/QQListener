@@ -37,7 +37,7 @@ SETTING_FILE = "setting.json"
 class SettingsWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(self.tr("QQ Listener - 设置"))
+        self.setWindowTitle("QQ Listener - 设置")
         self.resize(720, 600)
         self.setMinimumSize(680, 500)
 
@@ -98,7 +98,7 @@ class SettingsWindow(QWidget):
         with open(SETTING_FILE, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=4, ensure_ascii=False)
 
-        QMessageBox.information(self, self.tr("成功"), self.tr("设置已保存"))
+        QMessageBox.information(self, "成功", "设置已保存")
 
     def get_list(self, container):
         list_widget = container.list_widget
@@ -113,16 +113,16 @@ class SettingsWindow(QWidget):
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
 
-        self.tabs.addTab(self.create_basic_tab(), self.tr("基本"))
-        self.tabs.addTab(self.create_rule_tab(), self.tr("规则"))
-        self.tabs.addTab(self.create_appearance_tab(), self.tr("外观"))
-        self.tabs.addTab(self.create_notify_tab(), self.tr("通知"))
-        self.tabs.addTab(self.create_calling_tab(), self.tr("呼叫"))
-        self.tabs.addTab(self.create_sound_tab(), self.tr("声音"))
-        self.tabs.addTab(self.create_about_tab(), self.tr("关于"))
+        self.tabs.addTab(self.create_basic_tab(), "基本")
+        self.tabs.addTab(self.create_rule_tab(), "规则")
+        self.tabs.addTab(self.create_appearance_tab(), "外观")
+        self.tabs.addTab(self.create_notify_tab(), "通知")
+        self.tabs.addTab(self.create_calling_tab(), "呼叫")
+        self.tabs.addTab(self.create_sound_tab(), "声音")
+        self.tabs.addTab(self.create_about_tab(), "关于")
 
-        btn_save = QPushButton(self.tr("保存设置"))
-        btn_test = QPushButton(self.tr("测试弹窗"))
+        btn_save = QPushButton("保存设置")
+        btn_test = QPushButton("测试弹窗")
         buttom_layout = QHBoxLayout()
         buttom_layout.addWidget(btn_save)
         buttom_layout.addWidget(btn_test)
@@ -150,50 +150,42 @@ class SettingsWindow(QWidget):
         self.user_qq = QLineEdit(self.data.get("User_QQ", ""))
 
         self.tencent_path = QLineEdit(self.data.get("Tencent_Files_Path", ""))
-        btn_path = QPushButton(self.tr("浏览"))
+        btn_path = QPushButton("浏览")
         btn_path.clicked.connect(self.select_path)
 
         path_row = QHBoxLayout()
         path_row.addWidget(self.tencent_path)
         path_row.addWidget(btn_path)
 
-        self.uia_mode = QCheckBox(self.tr("启用 UIA 模式"))
+        self.uia_mode = QCheckBox("启用 UIA 模式")
         self.uia_mode.setChecked(self.data.get("UIAMode", False))
         uia_row = QHBoxLayout()
         uia_row.addWidget(self.uia_mode)
         uia_row.addWidget(
-            QLabel(
-                self.tr(
-                    "UI Automation（UIA）模式识别准确率较低，性能较差，非必要勿勾选"
-                )
-            )
+            QLabel("UI Automation（UIA）模式识别准确率较低，性能较差，非必要勿勾选")
         )
 
-        self.whereis_tencentfile = QLabel(self.tr("我的聊天信息保存在哪里？"))
+        self.whereis_tencentfile = QLabel("我的聊天信息保存在哪里？")
         self.whereis_tencentfile.mousePressEvent = lambda event: (
             QMessageBox.information(
                 self,
-                self.tr("提示"),
-                self.tr(
-                    "打开 QQ 主面板，点击左下角设置，在存储设置选项卡中显示“聊天消息默认保存到...”"
-                ),
+                "提示",
+                "打开 QQ 主面板，点击左下角设置，在存储设置选项卡中显示“聊天消息默认保存到...”",
             )
         )
 
         self.language_combo = QComboBox()
-        self.language_combo.addItems(
-            [self.tr("English"), self.tr("日本語"), self.tr("简体中文")]
-        )
+        self.language_combo.addItems(["English", "日本語", "简体中文"])
         self.language_combo.currentIndexChanged.connect(
             lambda: self.on_language_changed(self.language_combo)
         )
-        form.addRow(self.tr("扫描间隔 (秒)"), self.scan_interval)
-        form.addRow(self.tr("冷却时间 (秒)"), self.cooldown)
-        form.addRow(self.tr("QQ 号"), self.user_qq)
-        form.addRow(self.tr("聊天信息保存文件夹"), path_row)
+        form.addRow("扫描间隔 (秒)", self.scan_interval)
+        form.addRow("冷却时间 (秒)", self.cooldown)
+        form.addRow("QQ 号", self.user_qq)
+        form.addRow("聊天信息保存文件夹", path_row)
         form.addRow(self.whereis_tencentfile)
         form.addRow(uia_row)
-        form.addRow(self.tr("界面语言"), self.language_combo)
+        form.addRow("界面语言", self.language_combo)
         return widget
 
     # ==============================
@@ -203,21 +195,21 @@ class SettingsWindow(QWidget):
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
-        layout.addWidget(QLabel(self.tr("重要人物")))
+        layout.addWidget(QLabel("重要人物"))
         self.list_persons = self.create_list(self.data.get("Important_Persons", []))
         layout.addWidget(self.list_persons)
 
-        layout.addWidget(QLabel(self.tr("重要关键词")))
+        layout.addWidget(QLabel("重要关键词"))
         self.list_keywords = self.create_list(self.data.get("Important_Keywords", []))
         layout.addWidget(self.list_keywords)
 
-        layout.addWidget(QLabel(self.tr("黑名单")))
+        layout.addWidget(QLabel("黑名单"))
         self.list_black = self.create_list(self.data.get("BlackList", []))
         layout.addWidget(self.list_black)
 
-        self.someone_at_me = QCheckBox(self.tr("当 [有人@我] 时将通知优先级设为最高"))
+        self.someone_at_me = QCheckBox("当 [有人@我] 时将通知优先级设为最高")
         self.someone_at_me.setChecked(self.data.get("Someone_At_Me", True))
-        self.qq_only = QCheckBox(self.tr("仅监控 QQ 消息（推荐）"))
+        self.qq_only = QCheckBox("仅监控 QQ 消息（推荐）")
         self.qq_only.setChecked(self.data.get("QQ_Only", True))
         layout.addWidget(self.someone_at_me)
         layout.addWidget(self.qq_only)
@@ -230,7 +222,7 @@ class SettingsWindow(QWidget):
         widget = QWidget()
         layout = QVBoxLayout(widget)
 
-        layout.addWidget(QLabel(self.tr("设置界面主题")))
+        layout.addWidget(QLabel("设置界面主题"))
         self.theme_setting_combo = QComboBox()
         self.theme_setting_combo.addItems(
             [
@@ -265,23 +257,23 @@ class SettingsWindow(QWidget):
             lambda: self.on_setting_theme_changed(self.theme_setting_combo)
         )
         layout.addWidget(self.theme_setting_combo)
-        layout.addWidget(QLabel(self.tr("通知样式")))
+        layout.addWidget(QLabel("通知样式"))
         self.theme_notify_combo = QComboBox()
         self.theme_notify_combo.addItems(["FluentDark", "FluentLight", "Material"])
         self.theme_notify_combo.setCurrentText(
             self.data.get("Theme_Notify_Combo", "FluentDark")
         )
 
-        self.notify_shadow = QCheckBox(self.tr("通知窗口启用阴影"))
+        self.notify_shadow = QCheckBox("通知窗口启用阴影")
         self.notify_shadow.setChecked(self.data.get("Notify_Shadow", True))
-        self.notify_animation = QCheckBox(self.tr("通知窗口启用动画"))
+        self.notify_animation = QCheckBox("通知窗口启用动画")
         self.notify_animation.setChecked(self.data.get("Notify_Animation", True))
         self.notify_label = QLineEdit(
             self.data.get("Notify_Label", "xxtsoft QQListener")
         )
         self.notify_ok_layout = QHBoxLayout()
         self.notify_icon_ok = QLineEdit(self.data.get("icon_ok", "asset/icon_ok.png"))
-        self.notify_ok_select = QPushButton(self.tr("浏览"))
+        self.notify_ok_select = QPushButton("浏览")
         self.notify_ok_select.clicked.connect(
             lambda: self.select_file(self.notify_icon_ok)
         )
@@ -291,7 +283,7 @@ class SettingsWindow(QWidget):
         self.notify_icon_cancel = QLineEdit(
             self.data.get("icon_cancel", "asset/icon_cancel.png")
         )
-        self.notify_cancel_select = QPushButton(self.tr("浏览"))
+        self.notify_cancel_select = QPushButton("浏览")
         self.notify_cancel_select.clicked.connect(
             lambda: self.select_file(self.notify_icon_cancel)
         )
@@ -300,11 +292,11 @@ class SettingsWindow(QWidget):
         layout.addWidget(self.notify_shadow)
         layout.addWidget(self.notify_animation)
         layout.addWidget(self.theme_notify_combo)
-        layout.addWidget(QLabel(self.tr("通知下方显示文本（可留空）")))
+        layout.addWidget(QLabel("通知下方显示文本（可留空）"))
         layout.addWidget(self.notify_label)
-        layout.addWidget(QLabel(self.tr("通知收到按钮")))
+        layout.addWidget(QLabel("通知收到按钮"))
         layout.addLayout(self.notify_ok_layout)
-        layout.addWidget(QLabel(self.tr("通知关闭按钮")))
+        layout.addWidget(QLabel("通知关闭按钮"))
         layout.addLayout(self.notify_dismiss_layout)
         layout.addStretch()
         return widget
@@ -316,10 +308,10 @@ class SettingsWindow(QWidget):
         widget = QWidget()
         form = QFormLayout(widget)
 
-        self.auto_thumb = QCheckBox(self.tr("当有人发送[图片]自动显示缩略图（不稳定）"))
+        self.auto_thumb = QCheckBox("当有人发送[图片]自动显示缩略图（不稳定）")
         self.auto_thumb.setChecked(self.data.get("Auto_Show_Thumb", True))
 
-        self.always_on_top = QCheckBox(self.tr("通知始终置顶"))
+        self.always_on_top = QCheckBox("通知始终置顶")
         self.always_on_top.setChecked(self.data.get("Always_On_Top", True))
 
         self.max_wait = QSpinBox()
@@ -334,10 +326,10 @@ class SettingsWindow(QWidget):
         self.duration_important.setRange(1000, 30000)
         self.duration_important.setValue(self.data.get("Duration_Important", 10000))
 
-        self.tts = QCheckBox(self.tr("全局 TTS（语音播报） 开关"))
+        self.tts = QCheckBox("全局 TTS（语音播报） 开关")
         self.tts.setChecked(self.data.get("TTS", True))
         self.tts.checkStateChanged.connect(self.on_tts_changed)
-        self.edge_tts = QCheckBox(self.tr("使用新版 EdgeTTS"))
+        self.edge_tts = QCheckBox("使用新版 EdgeTTS")
         self.edge_tts.setChecked(self.data.get("Edge_TTS", True))
         self.edge_voice = QComboBox()
         self.edge_voice.setEditable(True)
@@ -382,30 +374,28 @@ class SettingsWindow(QWidget):
 
         self.edge_volume.setEnabled(self.edge_tts.isChecked())
 
-        self.edge_test_text = QLineEdit(self.tr("你好呀，这里是 EdgeTTS 酱哦~"))
+        self.edge_test_text = QLineEdit("你好呀，这里是 EdgeTTS 酱哦~")
         self.edge_test_layout = QHBoxLayout()
-        self.edge_test_btn = QPushButton(self.tr("试听"))
+        self.edge_test_btn = QPushButton("试听")
         self.edge_test_btn.clicked.connect(self.on_edge_test)
         self.edge_test_layout.addWidget(self.edge_test_text)
         self.edge_test_layout.addWidget(self.edge_test_btn)
 
         form.addRow(self.auto_thumb)
         form.addRow(self.always_on_top)
-        form.addRow(self.tr("最大等待缩略图时间(s)"), self.max_wait)
-        form.addRow(self.tr("普通通知时长(ms)"), self.duration_everyone)
-        form.addRow(self.tr("重要通知时长(ms)"), self.duration_important)
+        form.addRow("最大等待缩略图时间(s)", self.max_wait)
+        form.addRow("普通通知时长(ms)", self.duration_everyone)
+        form.addRow("重要通知时长(ms)", self.duration_important)
         form.addRow(self.tts)
         form.addRow(
             self.edge_tts,
-            QLabel(
-                self.tr("EdgeTTS 需要联网，但可自定义效果，若不勾选使用系统自带 TTS")
-            ),
+            QLabel("EdgeTTS 需要联网，但可自定义效果，若不勾选使用系统自带 TTS"),
         )
-        form.addRow(self.tr("EdgeTTS 音色"), self.edge_voice)
-        form.addRow(self.tr("EdgeTTS 语速"), self.edge_rate)
-        form.addRow(self.tr("EdgeTTS 音高"), self.edge_pitch)
-        form.addRow(self.tr("EdgeTTS 音量"), self.edge_volume)
-        form.addRow(self.tr("测试 TTS"), self.edge_test_layout)
+        form.addRow("EdgeTTS 音色", self.edge_voice)
+        form.addRow("EdgeTTS 语速", self.edge_rate)
+        form.addRow("EdgeTTS 音高", self.edge_pitch)
+        form.addRow("EdgeTTS 音量", self.edge_volume)
+        form.addRow("测试 TTS", self.edge_test_layout)
         return widget
 
     # ==============================
@@ -414,27 +404,23 @@ class SettingsWindow(QWidget):
     def create_calling_tab(self):
         widget = QWidget()
         form = QFormLayout(widget)
-        self.calling = QCheckBox(self.tr("允许老师呼叫"))
+        self.calling = QCheckBox("允许老师呼叫")
         self.calling.setChecked(self.data.get("Calling", True))
-        self.calling_keyword = QLineEdit(
-            self.data.get("Calling_Keyword", self.tr("呼叫"))
-        )
+        self.calling_keyword = QLineEdit(self.data.get("Calling_Keyword", "呼叫"))
         self.calling_during = QSpinBox()
         self.calling_during.setRange(0, 999999)
         self.calling_during.setValue(self.data.get("Calling_Duration", 600000))
         form.addRow(
             QLabel(
-                self.tr(
-                    "当老师按一定格式（例如 呼叫XXX，来办公室搬下作业）呼叫，弹出窗口将持续更长时间，并且循环播放铃声直到有人响应。使用本功能前请先和老师约定好呼叫关键词（只能设置一个）"
-                )
+                "当老师按一定格式（例如 呼叫XXX，来办公室搬下作业）呼叫，弹出窗口将持续更长时间，并且循环播放铃声直到有人响应。使用本功能前请先和老师约定好呼叫关键词（只能设置一个）"
             )
         )
         form.addRow(
-            self.tr("呼叫"),
+            "呼叫",
             self.calling,
         )
-        form.addRow(self.tr("呼叫关键词"), self.calling_keyword)
-        form.addRow(self.tr("呼叫窗口弹出时间"), self.calling_during)
+        form.addRow("呼叫关键词", self.calling_keyword)
+        form.addRow("呼叫窗口弹出时间", self.calling_during)
         return widget
 
     # ==============================
@@ -445,9 +431,9 @@ class SettingsWindow(QWidget):
         form = QFormLayout(widget)
 
         self.sound_normal = QLineEdit(self.data.get("Sound_Effect_Normal", ""))
-        btn1 = QPushButton(self.tr("浏览"))
+        btn1 = QPushButton("浏览")
         btn1.clicked.connect(lambda: self.select_file(self.sound_normal))
-        btn3 = QPushButton(self.tr("试听"))
+        btn3 = QPushButton("试听")
         btn3.clicked.connect(lambda: self.test_file(self.sound_normal))
 
         row1 = QHBoxLayout()
@@ -456,9 +442,9 @@ class SettingsWindow(QWidget):
         row1.addWidget(btn3)
 
         self.sound_important = QLineEdit(self.data.get("Sound_Effect_Important", ""))
-        btn2 = QPushButton(self.tr("浏览"))
+        btn2 = QPushButton("浏览")
         btn2.clicked.connect(lambda: self.select_file(self.sound_important))
-        btn4 = QPushButton(self.tr("试听"))
+        btn4 = QPushButton("试听")
         btn4.clicked.connect(lambda: self.test_file(self.sound_important))
 
         row2 = QHBoxLayout()
@@ -467,18 +453,18 @@ class SettingsWindow(QWidget):
         row2.addWidget(btn4)
 
         self.sound_calling = QLineEdit(self.data.get("Sound_Calling", ""))
-        btn5 = QPushButton(self.tr("浏览"))
+        btn5 = QPushButton("浏览")
         btn5.clicked.connect(lambda: self.select_file(self.sound_calling))
-        btn6 = QPushButton(self.tr("试听"))
+        btn6 = QPushButton("试听")
         btn6.clicked.connect(lambda: self.test_file(self.sound_calling))
 
         row3 = QHBoxLayout()
         row3.addWidget(self.sound_calling)
         row3.addWidget(btn5)
         row3.addWidget(btn6)
-        form.addRow(self.tr("普通提示音"), row1)
-        form.addRow(self.tr("重要提示音"), row2)
-        form.addRow(self.tr("呼叫提示音"), row3)
+        form.addRow("普通提示音", row1)
+        form.addRow("重要提示音", row2)
+        form.addRow("呼叫提示音", row3)
         return widget
 
     # ==============================
@@ -488,45 +474,39 @@ class SettingsWindow(QWidget):
         widget = QWidget()
         form = QFormLayout(widget)
 
-        self.title = QLabel(self.tr("QQListener"))
+        self.title = QLabel("QQListener")
         self.title.setStyleSheet("font-size: 20px; font-weight: 600;")
-        self.subtitle = QLabel(self.tr("最好的QQ通知监控软件 - 班级群监控神器"))
+        self.subtitle = QLabel("最好的QQ通知监控软件 - 班级群监控神器")
         self.fbi_warning = QLabel(
-            self.tr("警告：本程序仅支持 NT QQ，旧版 QQ 无法弹出 Windows Toast")
+            "警告：本程序仅支持 NT QQ，旧版 QQ 无法弹出 Windows Toast"
         )
         self.subtitle.setStyleSheet("font-size: 16px")
         self.author_title = QLabel(
-            self.tr(
-                "作者：株洲市南方中学 xxt8582753\n网站：https://xxtsoft.top\n邮箱：xxt8582753@126.com"
-            )
+            "作者：株洲市南方中学 xxt8582753\n网站：https://xxtsoft.top\n邮箱：xxt8582753@126.com"
         )
         self.author_title.setStyleSheet("font-size: 16px")
-        self.privacy_hint = QLabel(self.tr("我的数据安全吗？"))
+        self.privacy_hint = QLabel("我的数据安全吗？")
         self.privacy_hint.mousePressEvent = lambda event: QMessageBox.information(
             self,
-            self.tr("隐私提示"),
-            self.tr(
-                "您的数据是安全的，您的QQ号，文件路径全部保存在本地，聊天记录等信息不会上传，也没有任何遥测和错误报告。\nQQListener 是开源软件，使用 MIT 许可证，您可以在 GitHub 上查看源代码"
-            ),
+            "隐私提示",
+            "您的数据是安全的，您的QQ号，文件路径全部保存在本地，聊天记录等信息不会上传，也没有任何遥测和错误报告。\nQQListener 是开源软件，使用 MIT 许可证，您可以在 GitHub 上查看源代码",
         )
-        self.help_me_hint = QLabel(self.tr("支持开发者"))
+        self.help_me_hint = QLabel("支持开发者")
         ret = self.help_me_hint.mousePressEvent = lambda event: QMessageBox.information(
             self,
-            self.tr("支持开发者"),
-            self.tr(
-                "我是一名高中生，没有稳定的经济来源，如果您喜欢这个项目，并且想要支持我继续开发和维护，可以考虑请我喝杯奶茶哦~\n"
-            ),
+            "支持开发者",
+            "我是一名高中生，没有稳定的经济来源，如果您喜欢这个项目，并且想要支持我继续开发和维护，可以考虑请我喝杯奶茶哦~\n",
             QMessageBox.Ok | QMessageBox.Cancel,
         )
         if ret == QMessageBox.Ok:
             subprocess.Popen(["xdg-open", "https://xxtsoft.top/donate"])
-        self.find_icon_hint = QLabel(self.tr("QQListener 征集图标"))
+        self.find_icon_hint = QLabel("QQListener 征集图标")
         self.find_icon_hint.mousePressEvent = lambda event: QMessageBox.information(
             self,
-            self.tr("QQListener 征集图标"),
-            self.tr("目前这个图标有点丑，如果你有更好的，欢迎联系我！"),
+            "QQListener 征集图标",
+            "目前这个图标有点丑，如果你有更好的，欢迎联系我！",
         )
-        self.clear = QPushButton(self.tr("清除缓存"))
+        self.clear = QPushButton("清除缓存")
         self.clear.clicked.connect(self.clear_cache)
         form.addRow(self.title)
         form.addRow(self.subtitle)
@@ -550,10 +530,10 @@ class SettingsWindow(QWidget):
             list_widget.addItem(item)
 
         input_line = QLineEdit()
-        input_line.setPlaceholderText(self.tr("输入后点击添加。也可使用回车键"))
+        input_line.setPlaceholderText("输入后点击添加。也可使用回车键")
         input_line.returnPressed.connect(lambda: self.add_item(list_widget, input_line))
-        btn_add = QPushButton(self.tr("添加"))
-        btn_remove = QPushButton(self.tr("删除选中"))
+        btn_add = QPushButton("添加")
+        btn_remove = QPushButton("删除选中")
         btn_add.clicked.connect(lambda: self.add_item(list_widget, input_line))
         btn_remove.clicked.connect(lambda: self.remove_item(list_widget))
         layout.addWidget(list_widget)
@@ -571,12 +551,12 @@ class SettingsWindow(QWidget):
     # 文件选择
     # ==============================
     def select_path(self):
-        path = QFileDialog.getExistingDirectory(self, self.tr("选择文件夹"))
+        path = QFileDialog.getExistingDirectory(self, "选择文件夹")
         if path:
             self.tencent_path.setText(path)
 
     def select_file(self, line):
-        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择文件"))
+        path, _ = QFileDialog.getOpenFileName(self, "选择文件")
         if path:
             line.setText(path)
 
@@ -593,7 +573,7 @@ class SettingsWindow(QWidget):
             return
         for i in range(widget.count()):
             if widget.item(i).text() == text:
-                QMessageBox.information(self, self.tr("提示"), self.tr("该项已存在"))
+                QMessageBox.information(self, "提示", "该项已存在")
                 line.clear()
                 return
         widget.addItem(text)
@@ -671,12 +651,12 @@ class SettingsWindow(QWidget):
             time.sleep(0.1)
 
         pygame.mixer.quit()
-        print(self.tr("播放完成 🎧"))
+        print("播放完成 🎧")
 
     def clear_cache(self):
         if os.path.exists("tts_output.mp3"):
             os.remove("tts_output.mp3")
-        QMessageBox.information(self, self.tr("成功"), self.tr("缓存已清除"))
+        QMessageBox.information(self, "成功", "缓存已清除")
 
 
 if __name__ == "__main__":
