@@ -1,0 +1,9 @@
+*
+!.gitignore
+!1.iss
+!icon.ico
+!asset/
+!asset/**
+!mainsdk.py
+!notify.py
+!maingui2.py

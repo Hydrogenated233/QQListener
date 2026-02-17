@@ -8,6 +8,7 @@ import webbrowser
 import pygame
 import pyttsx3
 from PySide6.QtCore import Qt, QTranslator
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -23,6 +24,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSlider,
     QSpinBox,
+    QStackedLayout,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -48,9 +50,6 @@ class SettingsWindow(QWidget):
         self.load_settings()
         self.init_ui()
 
-    # ==============================
-    # 加载
-    # ==============================
     def load_settings(self):
         if os.path.exists(SETTING_FILE):
             with open(SETTING_FILE, "r", encoding="utf-8") as f:
@@ -58,9 +57,26 @@ class SettingsWindow(QWidget):
         else:
             self.data = {}
 
-    # ==============================
-    # 保存
-    # ==============================
+    def create_startup_shortcut(exe_path, shortcut_name="QQListener后台服务进程"):
+        try:
+            import win32com.client
+
+            startup_dir = os.path.join(
+                os.getenv("APPDATA"), r"Microsoft\Windows\Start Menu\Programs\Startup"
+            )
+            shortcut_path = os.path.join(startup_dir, f"{shortcut_name}.lnk")
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortCut(shortcut_path)
+            shortcut.Targetpath = exe_path
+            shortcut.WorkingDirectory = os.path.dirname(exe_path)
+            shortcut.IconLocation = exe_path
+            shortcut.save()
+            return True
+
+        except Exception as e:
+            print(e)
+            return False
+
     def save_settings(self):
         self.data.update(
             {
@@ -100,6 +116,9 @@ class SettingsWindow(QWidget):
                 "Green_Hand": False,
                 "Language": fuckqt.get("Language", "zh-CN"),
                 "QQ_Only": self.qq_only.isChecked(),
+                "Notify_Mask": self.notify_mask.isChecked(),
+                "Calling_BPM": self.calling_bpm.value(),
+                "Calling_Animation": self.calling_anim.isChecked(),
             }
         )
 
@@ -127,6 +146,7 @@ class SettingsWindow(QWidget):
         self.tabs.addTab(self.create_notify_tab(), self.tr("通知"))
         self.tabs.addTab(self.create_calling_tab(), self.tr("呼叫"))
         self.tabs.addTab(self.create_sound_tab(), self.tr("声音"))
+        self.tabs.addTab(self.create_debug_tab(), self.tr("调试"))
         self.tabs.addTab(self.create_about_tab(), self.tr("关于"))
 
         btn_save = QPushButton(self.tr("保存设置"))
@@ -135,9 +155,7 @@ class SettingsWindow(QWidget):
         buttom_layout.addWidget(btn_save)
         buttom_layout.addWidget(btn_test)
         btn_save.clicked.connect(self.save_settings)
-        btn_test.clicked.connect(
-            lambda: subprocess.Popen([sys.executable, "notify.py"])
-        )
+        btn_test.clicked.connect(lambda: subprocess.Popen(["notify.exe"]))
         layout.addLayout(buttom_layout)
 
     # ==============================
@@ -187,7 +205,12 @@ class SettingsWindow(QWidget):
                 ),
             )
         )
-
+        self.start_on_startup = QPushButton(self.tr("创建开机自启快捷方式"))
+        self.start_on_startup.clicked.connect(
+            lambda: self.create_startup_shortcut(
+                os.path.join(os.getcwd(), "mainsdk.exe")
+            )
+        )
         self.language_combo = QComboBox()
         self.language_combo.addItems(
             [self.tr("English"), self.tr("日本語"), self.tr("简体中文")]
@@ -207,6 +230,7 @@ class SettingsWindow(QWidget):
         form.addRow(self.tr("聊天信息保存文件夹"), path_row)
         form.addRow(self.whereis_tencentfile)
         form.addRow(uia_row)
+        # form.addRow(self.start_on_startup)
         form.addRow(self.tr("界面语言"), self.language_combo)
         return widget
 
@@ -290,6 +314,8 @@ class SettingsWindow(QWidget):
         self.notify_shadow.setChecked(self.data.get("Notify_Shadow", True))
         self.notify_animation = QCheckBox(self.tr("通知窗口启用动画"))
         self.notify_animation.setChecked(self.data.get("Notify_Animation", True))
+        self.notify_mask = QCheckBox(self.tr("通知窗口启用遮罩"))
+        self.notify_mask.setChecked(self.data.get("Notify_Mask", True))
         self.notify_label = QLineEdit(
             self.data.get("Notify_Label", "xxtsoft QQListener")
         )
@@ -349,6 +375,7 @@ class SettingsWindow(QWidget):
 
         layout.addWidget(self.notify_shadow)
         layout.addWidget(self.notify_animation)
+        layout.addWidget(self.notify_mask)
         layout.addWidget(self.theme_notify_combo)
         layout.addWidget(QLabel(self.tr("通知下方显示文本（可留空）")))
         layout.addWidget(self.notify_label)
@@ -454,7 +481,7 @@ class SettingsWindow(QWidget):
             self.edge_tts,
             QLabel(
                 self.tr(
-                    "EdgeTTS 基于神经网络，需要联网，但可自定义效果，若不勾选使用系统自带 TTS"
+                    "EdgeTTS 基于神经网络，需要联网，但可自定义效果，若不勾选使用系统自带 TTS（已知问题：EdgeTTS 音调和语速设为负数可能会报错）"
                 )
             ),
         )
@@ -479,19 +506,25 @@ class SettingsWindow(QWidget):
         self.calling_during = QSpinBox()
         self.calling_during.setRange(0, 999999)
         self.calling_during.setValue(self.data.get("Calling_Duration", 600000))
-        form.addRow(
-            QLabel(
-                self.tr(
-                    "当老师按一定格式（例如 呼叫XXX，来办公室搬下作业）呼叫，弹出窗口将持续更长时间，并且循环播放铃声直到有人响应。使用本功能前请先和老师约定好呼叫关键词（只能设置一个）"
-                )
+        self.calling_anim = QCheckBox(self.tr("呼叫启用动画"))
+        self.calling_anim.setChecked(self.data.get("Calling_Animation", True))
+        self.calling_bpm = QSpinBox()
+        self.calling_bpm.setRange(0, 1000)
+        self.calling_bpm.setValue(self.data.get("Calling_BPM", 120))
+        self.calling_hint = QLabel(
+            self.tr(
+                "当老师按一定格式（例如 呼叫XXX，来办公室搬下作业）呼叫，弹出窗口将持续更长时间，并且循环播放铃声和夸张的动画效果直到有人响应。使用本功能前请先和老师约定好呼叫关键词（只能设置一个）"
             )
         )
+        self.calling_hint.setWordWrap(True)
+        form.addRow(self.calling_hint)
         form.addRow(
-            self.tr("呼叫"),
             self.calling,
         )
         form.addRow(self.tr("呼叫关键词"), self.calling_keyword)
-        form.addRow(self.tr("呼叫窗口弹出时间"), self.calling_during)
+        form.addRow(self.tr("呼叫窗口弹出时间(ms)"), self.calling_during)
+        form.addRow(self.calling_anim)
+        form.addRow(self.tr("呼叫动画 BPM"), self.calling_bpm)
         return widget
 
     # ==============================
@@ -539,6 +572,60 @@ class SettingsWindow(QWidget):
         return widget
 
     # ==============================
+    # 调试
+    # ==============================
+    def create_debug_tab(self):
+        container = QWidget()
+        stack = QStackedLayout(container)
+        content = QWidget()
+        form = QFormLayout(content)
+
+        self.mainsdk_debug = QPushButton(self.tr("mainsdk活着吗？"))
+        self.mainsdk_debug.clicked.connect(lambda: self.test_exe("mainsdk"))
+        self.kill_mainsdk = QPushButton(self.tr("杀死mainsdk"))
+        self.kill_mainsdk.clicked.connect(
+            lambda: os.system("taskkill /f /im mainsdk.exe")
+        )
+        self.run_mainsdk = QPushButton(self.tr("运行mainsdk"))
+        self.run_mainsdk.clicked.connect(lambda: subprocess.Popen(["mainsdk.exe"]))
+        self.debug_hint = QLabel(
+            self.tr(
+                "鉴于现行版本后台主进程工作不稳定，且托盘图标容易丢失，若发现异常建议先杀死mainsdk，然后打开安装目录手动启动而非点击“运行mainsdk”"
+            )
+        )
+        self.debug_hint.setWordWrap(True)
+        self.mainsdk_layout = QHBoxLayout()
+        self.mainsdk_layout.addWidget(self.mainsdk_debug)
+        self.mainsdk_layout.addWidget(self.kill_mainsdk)
+        self.mainsdk_layout.addWidget(self.run_mainsdk)
+        form.addRow(self.mainsdk_layout)
+        form.addRow(self.debug_hint)
+        stack.addWidget(content)
+
+        overlay = QWidget()
+        # overlay.setStyleSheet("#overlay {background-color: rgba(0,0,0,150);}")
+        overlay_layout = QVBoxLayout(overlay)
+        overlay_layout.setAlignment(Qt.AlignCenter)
+
+        pix = QPixmap("asset/disable.png")
+        img_label = QLabel()
+        img_label.setPixmap(
+            pix.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+        overlay_layout.addWidget(img_label, alignment=Qt.AlignCenter)
+        tip = QLabel(self.tr("非开发者请勿随意操作调试页面的内容"))
+        overlay_layout.addWidget(tip, alignment=Qt.AlignCenter)
+
+        unlock_btn = QPushButton(self.tr("显示调试控件"))
+        unlock_btn.clicked.connect(lambda: stack.setCurrentWidget(content))
+        overlay_layout.addWidget(unlock_btn, alignment=Qt.AlignCenter)
+
+        stack.addWidget(overlay)
+        stack.setCurrentWidget(overlay)
+
+        return container
+
+    # ==============================
     # 关于
     # ==============================
     def create_about_tab(self):
@@ -547,7 +634,9 @@ class SettingsWindow(QWidget):
 
         self.title = QLabel(self.tr("QQListener"))
         self.title.setStyleSheet("font-size: 20px; font-weight: 600;")
-        self.subtitle = QLabel(self.tr("最好的QQ通知监控软件 - 班级群监控神器"))
+        self.subtitle = QLabel(
+            self.tr("最好的QQ通知监控软件 - 班级群监控神器 v1.0 20260217")
+        )
         self.fbi_warning = QLabel(
             self.tr("警告：本程序仅支持 NT QQ，旧版 QQ 无法弹出 Windows Toast")
         )
@@ -690,13 +779,13 @@ class SettingsWindow(QWidget):
         if selected == 0:
             translator.load("translations/en_US.qm")
             app.installTranslator(translator)
-            fuckqt["Language"] = "en-US"
+            fuckqt["Language"] = "en_US"
         elif selected == 1:
             translator.load("translations/ja_JP.qm")
             app.installTranslator(translator)
-            fuckqt["Language"] = "ja-JP"
+            fuckqt["Language"] = "ja_JP"
         else:
-            fuckqt["Language"] = "zh-CN"
+            fuckqt["Language"] = "zh_CN"
 
     def on_edge_test(self):
         if self.edge_tts.isChecked():
@@ -756,6 +845,23 @@ class SettingsWindow(QWidget):
             os.remove("tts_output.mp3")
         QMessageBox.information(self, self.tr("成功"), self.tr("缓存已清除"))
 
+    def test_exe(self, name):
+        try:
+            output = subprocess.check_output(
+                f'tasklist /fi "imagename eq {name}*"',
+                shell=True,
+                text=True,
+                stderr=subprocess.STDOUT,
+            )
+            if name in output:
+                QMessageBox.information(self, self.tr("成功"), self.tr(f"{name} 活着"))
+            else:
+                QMessageBox.warning(self, self.tr("失败"), self.tr(f"{name} 死了"))
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(
+                self, self.tr("错误"), self.tr(f"执行命令失败: {e.output}")
+            )
+
 
 if __name__ == "__main__":
     pygame.mixer.init()
@@ -765,6 +871,7 @@ if __name__ == "__main__":
         translator.load(f"translations/{fuckqt.get('Language', 'zh-CN')}.qm")
         app.installTranslator(translator)
     win = SettingsWindow()
+    win.setWindowIcon(QIcon("icon.ico"))
     selected = win.data.get("Theme_Setting_Combo")
     if selected == "Fusion":
         app.setStyle("Fusion")

@@ -1,24 +1,19 @@
 import asyncio
-import atexit
 import hashlib
 import json
 import os
 import subprocess
 import sys
+import threading
 import time
 
 import psutil
 import uiautomation as auto
+import win32api
 import win32con
 import win32gui
 import win32process
 
-
-def on_exit():
-    print("🛑 程序真的退出了")
-
-
-atexit.register(on_exit)
 last_thumb_set = set()
 
 setting = json.load(open("setting.json", "r", encoding="utf-8"))
@@ -72,15 +67,12 @@ def find_new_thumb(timeout=setting["Max_Wait_Thumb_Time"]):
                 return full
 
         time.sleep(0.3)
-
-    print("⚠️ 等待超时，没有新缩略图")
     return None
 
 
 def find_recent_thumb(seconds=5):
     try:
         if not os.path.exists(Thumb):
-            print("❌ Thumb目录不存在")
             return None
 
         files = [
@@ -90,21 +82,16 @@ def find_recent_thumb(seconds=5):
         ]
 
         if not files:
-            print("⚠️ 目录里没有图片")
             return None
 
         latest = max(files, key=os.path.getmtime)
 
         age = time.time() - os.path.getmtime(latest)
-
-        print(f"🕒 最新文件: {latest}")
-        print(f"🕒 距今: {age:.2f} 秒")
-
         if age <= seconds:
             return latest
 
     except Exception as e:
-        print("❌ 查找缩略图失败:", e)
+        print(e)
 
     return None
 
@@ -129,7 +116,6 @@ def activate_qq():
         if pid in qq_pids:
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             win32gui.SetForegroundWindow(hwnd)
-            print("✅ 已激活 QQ 窗口")
             return False
 
         return True
@@ -195,32 +181,25 @@ def process_notification(texts):
     else:
         notify["Calling"] = False
     # ==============================
-    # ⭐ 图片分支（时间戳版本）
+    # 图片分支（时间戳版本）
     # ==============================
     notify.pop("Pic_Path", None)
     if "[图片]" in notify["Message"] and setting["Auto_Show_Thumb"]:
-        print("🟡 进入图片分支")
-
         activate_qq()
 
         pic_path = find_new_thumb(timeout=8)
 
         if pic_path:
             notify["Pic_Path"] = pic_path
-            print("🟢 图片已捕获")
-        else:
-            print("⚠️ 未找到新缩略图")
-
     # 写入通知文件
     try:
         with open("notify.json", "w", encoding="utf-8") as f:
             json.dump(notify, f, ensure_ascii=False, indent=4)
 
-        subprocess.Popen([sys.executable, "notify.py"])
-        print(f"🔔 通知触发: {texts[0]}")
+        subprocess.Popen(["notify.exe"])
 
     except Exception as e:
-        print("❌ 弹窗失败:", e)
+        print(e)
 
 
 def get_uia_toasts():
@@ -349,7 +328,123 @@ async def main():
         await run_winsdk_mode()
 
 
+# 托盘相关常量
+TRAY_NOTIFY = win32con.WM_USER + 1
+ID_EXIT = 1023
+ID_SETTINGS = 1024  # 新增：设置
+
+
+def _wnd_proc(hwnd, msg, wparam, lparam):
+    if msg == TRAY_NOTIFY:
+        if lparam == win32con.WM_RBUTTONUP:
+            _show_menu(hwnd)
+        return 0
+    elif msg == win32con.WM_COMMAND:
+        id = win32api.LOWORD(wparam)
+        if id == ID_EXIT:
+            try:
+                nid = (hwnd, 0)
+                win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, nid)
+            except Exception:
+                pass
+            os._exit(0)
+        elif id == ID_SETTINGS:
+            try:
+                if os.path.exists("maingui2.exe"):
+                    # 使用 os.startfile 在 Windows 上更自然地打开 exe
+                    os.startfile("maingui2.exe")
+            except Exception as e:
+                print(e)
+        return 0
+    elif msg == win32con.WM_DESTROY:
+        try:
+            nid = (hwnd, 0)
+            win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, nid)
+        except Exception:
+            pass
+        win32gui.PostQuitMessage(0)
+        return 0
+    return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
+
+
+def _show_menu(hwnd):
+    menu = win32gui.CreatePopupMenu()
+    # 先添加 设置，再添加 退出
+    win32gui.AppendMenu(menu, win32con.MF_STRING, ID_SETTINGS, "设置")
+    win32gui.AppendMenu(menu, win32con.MF_STRING, ID_EXIT, "退出")
+    # 必须先设置前台窗口，否则菜单位置/失焦会异常
+    win32gui.SetForegroundWindow(hwnd)
+    pt = win32gui.GetCursorPos()
+    # TrackPopupMenu 会阻塞直到选择或取消
+    win32gui.TrackPopupMenu(menu, win32con.TPM_LEFTALIGN, pt[0], pt[1], 0, hwnd, None)
+    win32gui.PostMessage(hwnd, win32con.WM_NULL, 0, 0)
+
+
+def tray_thread():
+    hinst = win32api.GetModuleHandle(None)
+    class_name = "QQListenerTrayWindow"
+
+    wndclass = win32gui.WNDCLASS()
+    wndclass.hInstance = hinst
+    wndclass.lpszClassName = class_name
+    wndclass.lpfnWndProc = _wnd_proc
+    try:
+        atom = win32gui.RegisterClass(wndclass)
+    except Exception:
+        atom = None
+
+    hwnd = win32gui.CreateWindowEx(
+        0,
+        class_name,
+        "QQListenerTray",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        hinst,
+        None,
+    )
+
+    icon_path = "icon.ico"
+    try:
+        hicon = win32gui.LoadImage(
+            None,
+            icon_path,
+            win32con.IMAGE_ICON,
+            0,
+            0,
+            win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE,
+        )
+    except Exception:
+        hicon = 0
+
+    nid = (
+        hwnd,
+        0,
+        win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP,
+        TRAY_NOTIFY,
+        hicon,
+        "QQListener",
+    )
+    try:
+        win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, nid)
+    except Exception as e:
+        print("添加托盘图标失败:", e)
+        return
+
+    # 进入消息循环
+    try:
+        win32gui.PumpMessages()
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
+    t = threading.Thread(target=tray_thread, daemon=True)
+    t.start()
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

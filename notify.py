@@ -11,6 +11,7 @@ from PySide6.QtCore import (
     QThread,
     QTimer,
     QUrl,
+    QVariantAnimation,
     Signal,
 )
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QIcon, QPixmap
@@ -27,8 +28,6 @@ from PySide6.QtWidgets import (
 )
 
 setting = json.load(open("setting.json", "r", encoding="utf-8"))
-
-JSON_FILE = "notify.json"
 
 PRIORITY_STYLES = {
     0: {
@@ -102,8 +101,6 @@ class FilePreview(QFrame):
 class ThumbPreview(QFrame):
     """QQ缩略图预览控件"""
 
-    print("notify.py 启动")
-
     def __init__(self, file_path):
         print("当前 Pic_Path:", file_path)
         super().__init__()
@@ -143,7 +140,7 @@ class ThumbPreview(QFrame):
             return
 
         max_width = 440
-        max_height = 300  # ⭐ 限制最大高度
+        max_height = 300
 
         scaled = self.original_pixmap.scaled(
             max_width,
@@ -183,12 +180,10 @@ class FluentNotifyWindow(QWidget):
                 return fallback
 
         self.title_family = load_font(
-            self.data.get(
-                "Notify_Title_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF"
-            )
+            setting.get("Notify_Title_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF")
         )
         self.msg_family = load_font(
-            self.data.get(
+            setting.get(
                 "Notify_Message_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF"
             )
         )
@@ -196,6 +191,8 @@ class FluentNotifyWindow(QWidget):
         self.init_ui()
         if setting.get("Notify_Animation", True):
             self.init_animation()
+            if self.data.get("Calling") and setting.get("Calling_Animation", True):
+                self.start_calling_effect()
         else:
             self.setWindowOpacity(1)
 
@@ -206,7 +203,7 @@ class FluentNotifyWindow(QWidget):
                 Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
             )
         else:
-            self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool)
+            self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
         # 获取屏幕尺寸，全屏覆盖但背景透明
@@ -216,13 +213,14 @@ class FluentNotifyWindow(QWidget):
         style = PRIORITY_STYLES.get(self.data.get("Priority", 2))
 
         # 2. 遮罩层（全屏蒙版）
-        if style.get("overlay"):
+        if style.get("overlay") and setting.get("Notify_Mask", False):
             self.overlay = QWidget(self)
             self.overlay.setGeometry(0, 0, self.width(), self.height())
             self.overlay.setStyleSheet(f"background-color: {style['overlay']};")
 
         # 3. 消息容器（动态高度）
         self.bg_widget = QWidget(self)
+        self.bg_widget.setObjectName("BgWidget")
         self.bg_widget.setFixedWidth(500)
         self.bg_widget.setStyleSheet(f"""
             QWidget {{
@@ -252,12 +250,13 @@ class FluentNotifyWindow(QWidget):
 
         # 消息内容
         label_msg = QLabel(self.data.get("Message", ""))
-        label_msg.setFont(self.load_font(self.msg_family, 13))
 
         label_msg.setStyleSheet("color: white; border: none; background: transparent;")
         label_msg.setWordWrap(True)
+
         # 允许内容根据文字自动延展
         label_msg.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        label_msg.setFont(self.load_font(self.msg_family, 13))
         self.main_layout.addWidget(label_msg)
 
         file_path = self.data.get("file")
@@ -306,6 +305,40 @@ class FluentNotifyWindow(QWidget):
 
         self.btn_ok.clicked.connect(self.on_ok)
         self.btn_cancel.clicked.connect(self.close_animation)
+        self.bg_widget.raise_()
+
+    def start_calling_effect(self):
+        # --- 配置区 ---
+        bpm = setting.get("Calling_BPM", 120)
+        duration = int(60000 / bpm)
+        style = PRIORITY_STYLES.get(self.data.get("Priority", 2))
+        # 提取出基础颜色的 RGB 部分，去掉最后的 A
+        # 假设 bg_color 是 "rgba(43, 43, 43, 255)"
+        base_color_rgb = ",".join(style["bg_color"].split(",")[:3]).replace("rgba(", "")
+        # --------------
+
+        self.calling_anim = QVariantAnimation(self)
+        self.calling_anim.setDuration(duration)
+        self.calling_anim.setStartValue(150)  # 透明度起点 (0-255)
+        self.calling_anim.setKeyValueAt(0.5, 255)
+        self.calling_anim.setEndValue(150)  # 透明度终点
+        self.calling_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.calling_anim.setLoopCount(-1)
+
+        def update_bg(val):
+            # 只刷背景颜色，不碰其他组件，保护性能
+            self.bg_widget.setStyleSheet(f"""
+                #BgWidget {{
+                    background-color: rgba({base_color_rgb}, {int(val)});
+                    border-radius: 4px;
+                    border: 1px solid rgba(255, 255, 255, {int(val / 2)});
+                }}
+            """)
+
+        self.calling_anim.valueChanged.connect(update_bg)
+        # 务必确保这一行：给组件设个 ID 方便精准 QSS 注入
+        self.bg_widget.setObjectName("BgWidget")
+        self.calling_anim.start()
 
     def load_font(self, path, size, weight=QFont.Normal):
         if not path or not os.path.exists(path):
@@ -372,7 +405,10 @@ class FluentNotifyWindow(QWidget):
             QTimer.singleShot(self.duration, self.close_animation)
 
     def close_animation(self):
-        pygame.mixer.music.stop()
+        try:
+            pygame.mixer.music.stop()
+        except Exception as e:
+            print(e)
         anim = QPropertyAnimation(self, b"windowOpacity")
         anim.setDuration(300)
         anim.setStartValue(self.windowOpacity())
@@ -445,11 +481,15 @@ if __name__ == "__main__":
 
             win.tts_thread.finished_signal.connect(on_tts_ready)
             win.tts_thread.start()
+        else:
+            import pyttsx3
+
+            engine = pyttsx3.init()
+            engine.say(text)
+            engine.runAndWait()
 
     app = QApplication(sys.argv)
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(base_path, JSON_FILE)
-    with open(json_path, "r", encoding="utf-8") as f:
+    with open("notify.json", "r", encoding="utf-8") as f:
         config_data = json.load(f)
     win = FluentNotifyWindow(config_data)
     if setting.get("Notify_Shadow", True):
@@ -462,6 +502,7 @@ if __name__ == "__main__":
         win.bg_widget.setGraphicsEffect(shadow)
     pygame.mixer.init()
     win.show()
+    win.setWindowTitle("QQListener - 通知")
     QTimer.singleShot(0, play_tts)
     if config_data.get("Calling"):
         pygame.mixer.music.load(setting["Sound_Calling"])
