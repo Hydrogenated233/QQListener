@@ -7,3 +7,5 @@
 !mainsdk.py
 !notify.py
 !maingui2.py
+!translations/
+!translations/**
