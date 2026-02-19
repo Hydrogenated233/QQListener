@@ -1,6 +1,4 @@
-import json
 import os
-import subprocess
 import sys
 
 import pygame
@@ -8,11 +6,9 @@ from PySide6.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
     Qt,
-    QThread,
     QTimer,
     QUrl,
     QVariantAnimation,
-    Signal,
 )
 from PySide6.QtGui import QColor, QDesktopServices, QFont, QFontDatabase, QIcon, QPixmap
 from PySide6.QtWidgets import (
@@ -27,7 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-setting = json.load(open("setting.json", "r", encoding="utf-8"))
+from src.core.settings import get_settings
+from src.utils.tts import TTSManager
 
 PRIORITY_STYLES = {
     0: {
@@ -49,7 +46,7 @@ PRIORITY_STYLES = {
 
 
 class FilePreview(QFrame):
-    """文件附件预览控件 - 优化了交互逻辑"""
+    """文件附件预览控件"""
 
     def __init__(self, file_path, icon_path=None):
         super().__init__()
@@ -71,13 +68,12 @@ class FilePreview(QFrame):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(15, 5, 15, 5)
         self.setObjectName("FileBox")
+
         # 图标逻辑
         self.icon_label = QLabel()
         if icon_path and os.path.exists(icon_path):
             self.icon_label.setPixmap(
-                QPixmap(icon_path).scaled(
-                    24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation
-                )
+                QPixmap(icon_path).scaled(24, 24, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             )
         else:
             self.icon_label.setText("📄")
@@ -158,13 +154,33 @@ class ThumbPreview(QFrame):
         super().mousePressEvent(event)
 
 
-class FluentNotifyWindow(QWidget):
-    def __init__(self, data: dict):
-        super().__init__()
+class NotifyWindow(QWidget):
+    """通知窗口"""
+
+    def __init__(self, data: dict, parent=None):
+        super().__init__(parent)
         self.data = data
+        self.settings = get_settings()
         self.duration = data.get("Duration", 5000)
         self.animations = []
         self.font_cache = {}
+        self.tts_manager = TTSManager()
+
+        self._load_fonts()
+        self.init_ui()
+
+        if self.settings.notify_animation:
+            self.init_animation()
+            if data.get("Calling") and self.settings.calling_animation:
+                self.start_calling_effect()
+        else:
+            self.setWindowOpacity(1)
+
+        self._play_sound()
+        self._play_tts()
+
+    def _load_fonts(self):
+        """加载字体"""
 
         def load_font(path, fallback="Segoe UI"):
             if not os.path.exists(path):
@@ -179,29 +195,14 @@ class FluentNotifyWindow(QWidget):
                 print(f"[WARN] 字体加载失败: {path}")
                 return fallback
 
-        self.title_family = load_font(
-            setting.get("Notify_Title_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF")
-        )
-        self.msg_family = load_font(
-            setting.get(
-                "Notify_Message_Font", "asset/Font/HARMONYOS_SANS_SC_REGULAR.TTF"
-            )
-        )
-
-        self.init_ui()
-        if setting.get("Notify_Animation", True):
-            self.init_animation()
-            if self.data.get("Calling") and setting.get("Calling_Animation", True):
-                self.start_calling_effect()
-        else:
-            self.setWindowOpacity(1)
+        self.title_family = load_font(self.settings.notify_title_font)
+        self.msg_family = load_font(self.settings.notify_message_font)
 
     def init_ui(self):
-        # 1. 基础窗口设置
-        if self.data.get("Always_On_Top", True):
-            self.setWindowFlags(
-                Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
-            )
+        """初始化UI"""
+        # 基础窗口设置
+        if self.settings.always_on_top:
+            self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         else:
             self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -210,25 +211,26 @@ class FluentNotifyWindow(QWidget):
         screen_geo = QApplication.primaryScreen().geometry()
         self.setGeometry(screen_geo)
 
-        style = PRIORITY_STYLES.get(self.data.get("Priority", 2))
+        style = PRIORITY_STYLES.get(self.data.get("Priority", 2)) or PRIORITY_STYLES[2]
 
-        # 2. 遮罩层（全屏蒙版）
-        if style.get("overlay") and setting.get("Notify_Mask", False):
+        # 遮罩层（全屏蒙版）
+        if style and style.get("overlay") and self.settings.notify_mask:
             self.overlay = QWidget(self)
             self.overlay.setGeometry(0, 0, self.width(), self.height())
             self.overlay.setStyleSheet(f"background-color: {style['overlay']};")
 
-        # 3. 消息容器（动态高度）
+        # 消息容器（动态高度）
         self.bg_widget = QWidget(self)
         self.bg_widget.setObjectName("BgWidget")
         self.bg_widget.setFixedWidth(500)
-        self.bg_widget.setStyleSheet(f"""
-            QWidget {{
-                background-color: {style["bg_color"]};
-                border-radius: 4px;
-                border: 1px solid rgba(58, 58, 58, 255);
-            }}
-        """)
+        if style:
+            self.bg_widget.setStyleSheet(f"""
+                QWidget {{
+                    background-color: {style["bg_color"]};
+                    border-radius: 4px;
+                    border: 1px solid rgba(58, 58, 58, 255);
+                }}
+            """)
 
         self.main_layout = QVBoxLayout(self.bg_widget)
         self.main_layout.setContentsMargins(30, 30, 30, 30)
@@ -243,22 +245,18 @@ class FluentNotifyWindow(QWidget):
                 QFont.Bold,
             )
         )
-        label_sender.setStyleSheet(
-            "color: white; border: none; background: transparent;"
-        )
+        label_sender.setStyleSheet("color: white; border: none; background: transparent;")
         self.main_layout.addWidget(label_sender)
 
         # 消息内容
         label_msg = QLabel(self.data.get("Message", ""))
-
         label_msg.setStyleSheet("color: white; border: none; background: transparent;")
         label_msg.setWordWrap(True)
-
-        # 允许内容根据文字自动延展
         label_msg.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
-        label_msg.setFont(self.load_font(self.msg_family, 13))
+        label_msg.setFont(self._get_font(self.msg_family, 13))
         self.main_layout.addWidget(label_msg)
 
+        # 文件预览
         file_path = self.data.get("file")
         if file_path and os.path.exists(file_path):
             self.file_preview = FilePreview(file_path, self.data.get("icon_file"))
@@ -266,34 +264,35 @@ class FluentNotifyWindow(QWidget):
         elif file_path:
             print(f"[WARN] 附件路径未找到: {file_path}")
 
-        file_path = self.data.get("Pic_Path")
-        if file_path and os.path.exists(file_path):
-            self.thumb_preview = ThumbPreview(file_path)
+        # 缩略图预览
+        pic_path = self.data.get("Pic_Path")
+        if pic_path and os.path.exists(pic_path):
+            self.thumb_preview = ThumbPreview(pic_path)
             self.main_layout.addWidget(self.thumb_preview)
-        elif file_path:
-            print(f"[WARN] 附件路径未找到: {file_path}")
+        elif pic_path:
+            print(f"[WARN] 图片路径未找到: {pic_path}")
 
         # 按钮组
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(10)
 
-        self.btn_ok = self.create_button(
-            setting.get("OK_btn", "确认"), setting.get("icon_ok")
-        )
-        self.btn_cancel = self.create_button(
-            setting.get("Cancel_btn", "关闭"), setting.get("icon_cancel")
+        self.btn_ok = self._create_button(self.data.get("OK_btn", "确认"), self.settings.icon_ok)
+        self.btn_cancel = self._create_button(
+            self.data.get("Cancel_btn", "关闭"), self.settings.icon_cancel
         )
 
         btn_layout.addWidget(self.btn_ok)
         btn_layout.addWidget(self.btn_cancel)
         self.main_layout.addLayout(btn_layout)
+
         # 提示文本
-        if setting["Notify_Label"]:
-            notify_label = QLabel(setting["Notify_Label"])
+        if self.settings.notify_label:
+            notify_label = QLabel(self.settings.notify_label)
             notify_label.setStyleSheet(
                 "font-size: 12px; color: rgba(255, 255, 255, 100); background: none; border: none;"
             )
             self.main_layout.addWidget(notify_label)
+
         # 让容器根据内容自动调整大小
         self.bg_widget.adjustSize()
 
@@ -307,54 +306,12 @@ class FluentNotifyWindow(QWidget):
         self.btn_cancel.clicked.connect(self.close_animation)
         self.bg_widget.raise_()
 
-    def start_calling_effect(self):
-        # --- 配置区 ---
-        bpm = setting.get("Calling_BPM", 120)
-        duration = int(60000 / bpm)
-        style = PRIORITY_STYLES.get(self.data.get("Priority", 2))
-        # 提取出基础颜色的 RGB 部分，去掉最后的 A
-        # 假设 bg_color 是 "rgba(43, 43, 43, 255)"
-        base_color_rgb = ",".join(style["bg_color"].split(",")[:3]).replace("rgba(", "")
-        # --------------
+    def _get_font(self, family, size, weight=QFont.Normal):
+        """获取字体"""
+        return QFont(family, size, weight)
 
-        self.calling_anim = QVariantAnimation(self)
-        self.calling_anim.setDuration(duration)
-        self.calling_anim.setStartValue(150)  # 透明度起点 (0-255)
-        self.calling_anim.setKeyValueAt(0.5, 255)
-        self.calling_anim.setEndValue(150)  # 透明度终点
-        self.calling_anim.setEasingCurve(QEasingCurve.InOutQuad)
-        self.calling_anim.setLoopCount(-1)
-
-        def update_bg(val):
-            # 只刷背景颜色，不碰其他组件，保护性能
-            self.bg_widget.setStyleSheet(f"""
-                #BgWidget {{
-                    background-color: rgba({base_color_rgb}, {int(val)});
-                    border-radius: 4px;
-                    border: 1px solid rgba(255, 255, 255, {int(val / 2)});
-                }}
-            """)
-
-        self.calling_anim.valueChanged.connect(update_bg)
-        # 务必确保这一行：给组件设个 ID 方便精准 QSS 注入
-        self.bg_widget.setObjectName("BgWidget")
-        self.calling_anim.start()
-
-    def load_font(self, path, size, weight=QFont.Normal):
-        if not path or not os.path.exists(path):
-            return QFont(QApplication.font().family(), size, weight)
-
-        if path not in self.font_cache:
-            font_id = QFontDatabase.addApplicationFont(path)
-            if font_id != -1:
-                family = QFontDatabase.applicationFontFamilies(font_id)[0]
-            else:
-                family = QApplication.font().family()
-            self.font_cache[path] = family
-
-        return QFont(self.font_cache[path], size, weight)
-
-    def create_button(self, text, icon_path):
+    def _create_button(self, text, icon_path):
+        """创建按钮"""
         btn = QPushButton(text)
         if icon_path and os.path.exists(icon_path):
             btn.setIcon(QIcon(icon_path))
@@ -378,8 +335,43 @@ class FluentNotifyWindow(QWidget):
         """)
         return btn
 
+    def start_calling_effect(self):
+        """启动呼叫动画效果"""
+        bpm = self.settings.calling_bpm
+        duration = int(60000 / bpm)
+        style = PRIORITY_STYLES.get(self.data.get("Priority", 2)) or PRIORITY_STYLES[2]
+
+        if not style:
+            return
+
+        # 提取基础颜色的RGB部分
+        base_color_rgb = ",".join(style["bg_color"].split(",")[:3]).replace("rgba(", "")
+
+        self.calling_anim = QVariantAnimation(self)
+        self.calling_anim.setDuration(duration)
+        self.calling_anim.setStartValue(150)
+        self.calling_anim.setKeyValueAt(0.5, 255)
+        self.calling_anim.setEndValue(150)
+        self.calling_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self.calling_anim.setLoopCount(-1)
+
+        def update_bg(val):
+            self.bg_widget.setStyleSheet(f"""
+                #BgWidget {{
+                    background-color: rgba({base_color_rgb}, {int(val)});
+                    border-radius: 4px;
+                    border: 1px solid rgba(255, 255, 255, {int(val / 2)});
+                }}
+            """)
+
+        self.calling_anim.valueChanged.connect(update_bg)
+        self.bg_widget.setObjectName("BgWidget")
+        self.calling_anim.start()
+
     def init_animation(self):
+        """初始化动画"""
         self.setWindowOpacity(0)
+
         # 淡入
         anim_opacity = QPropertyAnimation(self, b"windowOpacity")
         anim_opacity.setDuration(500)
@@ -405,10 +397,13 @@ class FluentNotifyWindow(QWidget):
             QTimer.singleShot(self.duration, self.close_animation)
 
     def close_animation(self):
+        """关闭动画"""
+        # 停止所有正在播放的音效
         try:
-            pygame.mixer.music.stop()
+            pygame.mixer.stop()
         except Exception as e:
             print(e)
+
         anim = QPropertyAnimation(self, b"windowOpacity")
         anim.setDuration(300)
         anim.setStartValue(self.windowOpacity())
@@ -416,102 +411,60 @@ class FluentNotifyWindow(QWidget):
         anim.finished.connect(self.close)
         anim.start()
         self.animations.append(anim)
-        anim.finished.connect(QApplication.instance().quit)
-
-    def override_qss(self, qss):
-        with open(qss, "r", encoding="utf-8") as f:
-            qss = f.read()
-        self.setStyleSheet(qss)
 
     def on_ok(self):
+        """确认按钮点击"""
         print(f"用户点击了确认: {self.data.get('Sender')}")
         self.close_animation()
 
-
-class TTSThread(QThread):
-    finished_signal = Signal(str)
-
-    def __init__(self, text):
-        super().__init__()
-        self.text = text
-
-    def run(self):
+    def _play_sound(self):
+        """播放提示音 - 使用Sound对象支持同时播放多个音频"""
         try:
-            OUTPUT_FILE = "tts_temp.mp3"
+            if self.data.get("Calling"):
+                sound_file = self.settings.sound_calling
+            elif self.data.get("Priority") == 0:
+                sound_file = self.settings.sound_important
+            else:
+                sound_file = self.settings.sound_normal
 
-            VOICE = setting.get("Edge_Voice", "zh-CN-XiaoyiNeural")
-            RATE = setting.get("Edge_Rate", "+0%")
-            PITCH = setting.get("Edge_Pitch", "+0Hz")
-            VOLUME = setting.get("Edge_Volume", "+0%")
-
-            safe_text = self.text.replace('"', "'")
-
-            cmd = (
-                f"edge-tts "
-                f'--voice "{VOICE}" '
-                f'--rate "{RATE}" '
-                f'--pitch "{PITCH}" '
-                f'--volume "{VOLUME}" '
-                f'--text "{safe_text}" '
-                f'--write-media "{OUTPUT_FILE}"'
-            )
-
-            subprocess.run(cmd, shell=True, check=True)
-
-            self.finished_signal.emit(OUTPUT_FILE)
-
+            if sound_file and os.path.exists(sound_file):
+                # 使用Sound对象而不是music，支持同时播放多个音频
+                sound = pygame.mixer.Sound(sound_file)
+                if self.data.get("Calling"):
+                    sound.play(-1)  # 循环播放
+                else:
+                    sound.play()
         except Exception as e:
-            print("Edge TTS 线程错误:", e)
+            print(f"播放声音失败: {e}")
+
+    def _play_tts(self):
+        """播放TTS"""
+        message = self.data.get("Message", "")
+        if message:
+            self.tts_manager.speak(message)
 
 
-if __name__ == "__main__":
+def show_notification(data: dict) -> NotifyWindow:
+    """显示通知窗口 - 用于独立运行或兼容旧代码"""
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
 
-    def play_tts():
-        if not setting.get("TTS", False):
-            return
+    settings = get_settings()
 
-        text = config_data.get("Message", "")
+    # 应用阴影效果
+    def apply_shadow(win):
+        if settings.notify_shadow:
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(50)
+            shadow.setXOffset(0)
+            shadow.setYOffset(0)
+            shadow.setColor(QColor(0, 0, 0, 200))
+            win.bg_widget.setGraphicsEffect(shadow)
 
-        if setting.get("Edge_TTS", False):
-            win.tts_thread = TTSThread(text)
-
-            def on_tts_ready(file_path):
-                tts_sound = pygame.mixer.Sound(file_path)
-                tts_sound.play()
-
-            win.tts_thread.finished_signal.connect(on_tts_ready)
-            win.tts_thread.start()
-        else:
-            import pyttsx3
-
-            engine = pyttsx3.init()
-            engine.say(text)
-            engine.runAndWait()
-
-    app = QApplication(sys.argv)
-    with open("notify.json", "r", encoding="utf-8") as f:
-        config_data = json.load(f)
-    win = FluentNotifyWindow(config_data)
-    if setting.get("Notify_Shadow", True):
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(50)
-        shadow.setXOffset(0)
-        shadow.setYOffset(0)
-        shadow.setColor(QColor(0, 0, 0, 200))
-
-        win.bg_widget.setGraphicsEffect(shadow)
-    pygame.mixer.init()
+    win = NotifyWindow(data)
+    apply_shadow(win)
     win.show()
     win.setWindowTitle("QQListener - 通知")
-    QTimer.singleShot(0, play_tts)
-    if config_data.get("Calling"):
-        pygame.mixer.music.load(setting["Sound_Calling"])
-        pygame.mixer.music.play(-1)
-    else:
-        if config_data.get("Priority") == 0:
-            pygame.mixer.music.load(setting["Sound_Effect_Important"])
-        else:
-            pygame.mixer.music.load(setting["Sound_Effect_Normal"])
-        pygame.mixer.music.play()
 
-    sys.exit(app.exec())
+    return win

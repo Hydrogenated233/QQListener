@@ -1,11 +1,62 @@
-*
-!.gitignore
-!1.iss
-!icon.ico
-!asset/
-!asset/**
-!mainsdk.py
-!notify.py
-!maingui2.py
-!translations/
-!translations/**
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project specific
+*.json
+!setting.json
+!notify.json
+*.mp3
+*.wav
+*.ogg
+tts_temp.mp3
+tts_output.mp3
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
+*.log
+logs/
+
+# PyInstaller
+*.spec
+*.exe
+*.manifest
+
+# Misc
+.DS_Store
