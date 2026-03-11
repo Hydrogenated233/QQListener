@@ -2,6 +2,7 @@ import hashlib
 import os
 import time
 
+from loguru import logger
 from src.core.settings import get_settings
 
 
@@ -131,8 +132,8 @@ class MessageProcessor:
                     if f not in self.last_file_mtime or self.last_file_mtime[f] != mtime:
                         self.last_file_mtime[f] = mtime
                         return full
-            except OSError as e:
-                print(f"读取缩略图目录失败: {e}")
+            except OSError:
+                logger.exception("读取缩略图目录失败")
                 return None
 
             time.sleep(0.3)

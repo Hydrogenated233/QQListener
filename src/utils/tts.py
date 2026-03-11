@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+from loguru import logger
 import pygame
 from PySide6.QtCore import QThread, Signal
 
@@ -28,8 +29,8 @@ class TTSThread(QThread):
                 self._run_edge_tts()
             else:
                 self._run_system_tts()
-        except Exception as e:
-            print(f"TTS错误: {e}")
+        except Exception:
+            logger.exception("TTS错误")
             self.finished_signal.emit("")
 
     def _run_edge_tts(self):
@@ -63,8 +64,8 @@ class TTSThread(QThread):
         try:
             subprocess.run(cmd, shell=True, check=True)
             self.finished_signal.emit(output_file)
-        except subprocess.CalledProcessError as e:
-            print(f"Edge TTS执行失败: {e}")
+        except subprocess.CalledProcessError:
+            logger.exception("Edge TTS执行失败")
             self.finished_signal.emit("")
 
     def _run_system_tts(self):
@@ -81,8 +82,8 @@ class TTSThread(QThread):
             engine.say(self.text)
             engine.runAndWait()
             self.finished_signal.emit("")
-        except Exception as e:
-            print(f"系统TTS失败: {e}")
+        except Exception:
+            logger.exception("系统TTS失败")
             self.finished_signal.emit("")
 
 
@@ -105,8 +106,8 @@ class TTSManager:
                 try:
                     sound = pygame.mixer.Sound(file_path)
                     sound.play()
-                except Exception as e:
-                    print(f"播放TTS音频失败: {e}")
+                except Exception:
+                    logger.exception("播放TTS音频失败")
 
         self._current_thread.finished_signal.connect(on_tts_ready)
         self._current_thread.start()

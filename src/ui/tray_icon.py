@@ -1,3 +1,4 @@
+from loguru import logger
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction, QCursor, QIcon
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
@@ -49,8 +50,8 @@ class TrayIcon(QObject):
 
             return True
 
-        except Exception as e:
-            print(f"创建托盘图标失败: {e}")
+        except Exception:
+            logger.exception("创建托盘图标失败")
             return False
 
     def _on_activated(self, reason):

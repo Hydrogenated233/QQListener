@@ -1,10 +1,12 @@
 import sys
 
 import pygame
+from loguru import logger
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+from src.core.logging import setup_logging
 from src.core.settings import get_settings
 from src.core.signals import get_signals
 from src.core.worker import NotificationWorker
@@ -28,11 +30,13 @@ class QQListenerApp:
 
     def initialize(self) -> bool:
         """初始化应用程序"""
+        setup_logging()
+
         # 初始化pygame混音器
         try:
             pygame.mixer.init()
-        except Exception as e:
-            print(f"初始化音频失败: {e}")
+        except Exception:
+            logger.exception("初始化音频失败")
 
         # 创建Qt应用
         self.app = QApplication(sys.argv)
@@ -54,7 +58,7 @@ class QQListenerApp:
         self.tray_icon.exit_signal.connect(self.exit)
 
         if not self.tray_icon.create():
-            print("创建托盘图标失败")
+            logger.error("创建托盘图标失败")
 
         return True
 
@@ -74,7 +78,7 @@ class QQListenerApp:
     def run(self):
         """运行应用程序"""
         if not self.initialize():
-            print("初始化失败")
+            logger.error("初始化失败")
             sys.exit(1)
 
         # 如果是首次运行，显示设置窗口
@@ -120,8 +124,8 @@ class QQListenerApp:
         """推送通知 - 使用通知管理器在同一进程中创建窗口"""
         try:
             self.notify_manager.show_notification(data)
-        except Exception as e:
-            print(f"推送通知失败: {e}")
+        except Exception:
+            logger.exception("推送通知失败")
 
     def exit(self):
         """退出应用程序"""

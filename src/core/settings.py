@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any
 
+from loguru import logger
 
 class Settings:
     """设置管理单例类"""
@@ -34,8 +35,8 @@ class Settings:
                 with open(self._settings_file, encoding="utf-8") as f:
                     loaded_data = json.load(f)
                     self._data = loaded_data if isinstance(loaded_data, dict) else {}
-            except (json.JSONDecodeError, OSError) as e:
-                print(f"加载设置失败: {e}")
+            except (json.JSONDecodeError, OSError):
+                logger.exception("加载设置失败")
                 self._data = {}
         else:
             self._data = {}
@@ -49,8 +50,8 @@ class Settings:
             with open(self._settings_file, "w", encoding="utf-8") as f:
                 json.dump(self._data, f, indent=4, ensure_ascii=False)
             return True
-        except OSError as e:
-            print(f"保存设置失败: {e}")
+        except OSError:
+            logger.exception("保存设置失败")
             return False
 
     def get(self, key: str, default: Any = None) -> Any:

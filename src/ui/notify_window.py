@@ -1,6 +1,7 @@
 import os
 import sys
 
+from loguru import logger
 import pygame
 from PySide6.QtCore import (
     QEasingCurve,
@@ -98,7 +99,7 @@ class ThumbPreview(QFrame):
     """QQ缩略图预览控件"""
 
     def __init__(self, file_path):
-        print("当前 Pic_Path:", file_path)
+        logger.debug("当前 Pic_Path: {}", file_path)
         super().__init__()
         self.file_path = file_path
         self.original_pixmap = None
@@ -184,15 +185,15 @@ class NotifyWindow(QWidget):
 
         def load_font(path, fallback="Segoe UI"):
             if not os.path.exists(path):
-                print(f"[WARN] 字体文件不存在: {path}")
+                logger.warning("字体文件不存在: {}", path)
                 return fallback
             font_id = QFontDatabase.addApplicationFont(path)
             if font_id != -1:
                 family = QFontDatabase.applicationFontFamilies(font_id)[0]
-                print(f"[INFO] 字体加载成功: {family}")
+                logger.info("字体加载成功: {}", family)
                 return family
             else:
-                print(f"[WARN] 字体加载失败: {path}")
+                logger.warning("字体加载失败: {}", path)
                 return fallback
 
         self.title_family = load_font(self.settings.notify_title_font)
@@ -262,7 +263,7 @@ class NotifyWindow(QWidget):
             self.file_preview = FilePreview(file_path, self.data.get("icon_file"))
             self.main_layout.addWidget(self.file_preview)
         elif file_path:
-            print(f"[WARN] 附件路径未找到: {file_path}")
+            logger.warning("附件路径未找到: {}", file_path)
 
         # 缩略图预览
         pic_path = self.data.get("Pic_Path")
@@ -270,7 +271,7 @@ class NotifyWindow(QWidget):
             self.thumb_preview = ThumbPreview(pic_path)
             self.main_layout.addWidget(self.thumb_preview)
         elif pic_path:
-            print(f"[WARN] 图片路径未找到: {pic_path}")
+            logger.warning("图片路径未找到: {}", pic_path)
 
         # 按钮组
         btn_layout = QHBoxLayout()
@@ -401,8 +402,8 @@ class NotifyWindow(QWidget):
         # 停止所有正在播放的音效
         try:
             pygame.mixer.stop()
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.exception("停止音效失败")
 
         anim = QPropertyAnimation(self, b"windowOpacity")
         anim.setDuration(300)
@@ -414,7 +415,7 @@ class NotifyWindow(QWidget):
 
     def on_ok(self):
         """确认按钮点击"""
-        print(f"用户点击了确认: {self.data.get('Sender')}")
+        logger.info("用户点击了确认: {}", self.data.get("Sender"))
         self.close_animation()
 
     def _play_sound(self):
@@ -434,8 +435,8 @@ class NotifyWindow(QWidget):
                     sound.play(-1)  # 循环播放
                 else:
                     sound.play()
-        except Exception as e:
-            print(f"播放声音失败: {e}")
+        except Exception:
+            logger.exception("播放声音失败")
 
     def _play_tts(self):
         """播放TTS"""

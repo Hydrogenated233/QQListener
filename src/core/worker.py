@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import sys
 
+from loguru import logger
 from PySide6.QtCore import QThread, Signal
 
 from src.core.settings import get_settings
@@ -29,8 +30,8 @@ class NotificationWorker(QThread):
                 asyncio.run(self._run_uia_mode())
             else:
                 asyncio.run(self._run_winsdk_mode())
-        except Exception as e:
-            print(f"工作线程异常: {e}")
+        except Exception:
+            logger.exception("工作线程异常")
 
     def stop(self):
         """停止工作线程"""
@@ -63,8 +64,8 @@ class NotificationWorker(QThread):
 
                 self.processor.update_active_toasts(current_found_keys)
 
-            except Exception as e:
-                print(f"UIA异常: {e}")
+            except Exception:
+                logger.exception("UIA异常")
 
             await asyncio.sleep(self.settings.scan_interval)
 
@@ -99,8 +100,8 @@ class NotificationWorker(QThread):
                                 texts_list.append(texts)
                         except Exception:
                             continue
-            except Exception as e:
-                print(f"获取UIA通知失败: {e}")
+            except Exception:
+                logger.exception("获取UIA通知失败")
         else:
             try:
                 container = auto.WindowControl(
@@ -123,8 +124,8 @@ class NotificationWorker(QThread):
                                 texts_list.append(texts)
                         except Exception:
                             continue
-            except Exception as e:
-                print(f"获取Win11 UIA通知失败: {e}")
+            except Exception:
+                logger.exception("获取Win11 UIA通知失败")
 
         return texts_list
 
@@ -134,19 +135,19 @@ class NotificationWorker(QThread):
             import winsdk.windows.ui.notifications as notifications
             import winsdk.windows.ui.notifications.management as mgmt
         except ImportError:
-            print("WinSDK未安装，无法使用WinSDK模式")
+            logger.error("WinSDK未安装，无法使用WinSDK模式")
             return
 
         try:
             listener = mgmt.UserNotificationListener.current
             if not listener:
-                print("无法获取通知监听器")
+                logger.error("无法获取通知监听器")
                 return
 
             status = await listener.request_access_async()
 
             if status != mgmt.UserNotificationListenerAccessStatus.ALLOWED:
-                print("未获得通知访问权限")
+                logger.error("未获得通知访问权限")
                 return
 
             known_ids: set[int] = set()
@@ -156,8 +157,8 @@ class NotificationWorker(QThread):
                 )
                 if initial_notifs:
                     known_ids = {n.id for n in initial_notifs if n and hasattr(n, 'id')}
-            except Exception as e:
-                print(f"获取初始通知失败: {e}")
+            except Exception:
+                logger.exception("获取初始通知失败")
 
             while self._running:
                 try:
@@ -219,17 +220,17 @@ class NotificationWorker(QThread):
                                 if result and isinstance(result, dict):
                                     self.notification_ready.emit(result)
 
-                        except Exception as e:
-                            print(f"处理通知异常: {e}")
+                        except Exception:
+                            logger.exception("处理通知异常")
 
                         known_ids.add(n.id)
 
                     known_ids &= current_ids
 
-                except Exception as e:
-                    print(f"WinSDK异常: {e}")
+                except Exception:
+                    logger.exception("WinSDK异常")
 
                 await asyncio.sleep(self.settings.scan_interval)
 
-        except Exception as e:
-            print(f"WinSDK模式初始化失败: {e}")
+        except Exception:
+            logger.exception("WinSDK模式初始化失败")
