@@ -4,6 +4,7 @@ from typing import Any
 
 from loguru import logger
 
+
 class Settings:
     """设置管理单例类"""
 
@@ -25,7 +26,6 @@ class Settings:
         Settings._initialized = True
 
     def _load(self) -> None:
-        """从文件加载设置"""
         if not self._settings_file:
             self._data = {}
             return
@@ -42,7 +42,6 @@ class Settings:
             self._data = {}
 
     def save(self) -> bool:
-        """保存设置到文件"""
         if not self._settings_file:
             return False
 
@@ -55,7 +54,6 @@ class Settings:
             return False
 
     def get(self, key: str, default: Any = None) -> Any:
-        """获取设置值"""
         if not key or not isinstance(key, str):
             return default
         return self._data.get(key, default)

@@ -118,7 +118,10 @@ class NotificationWorker(QThread):
                             texts = [
                                 c.Name
                                 for c in childs
-                                if c and c.ControlTypeName == "TextControl" and c.Name and len(c.Name) > 1
+                                if c
+                                and c.ControlTypeName == "TextControl"
+                                and c.Name
+                                and len(c.Name) > 1
                             ]
                             if len(texts) >= 2:
                                 texts_list.append(texts)
@@ -156,7 +159,7 @@ class NotificationWorker(QThread):
                     notifications.NotificationKinds.TOAST
                 )
                 if initial_notifs:
-                    known_ids = {n.id for n in initial_notifs if n and hasattr(n, 'id')}
+                    known_ids = {n.id for n in initial_notifs if n and hasattr(n, "id")}
             except Exception:
                 logger.exception("获取初始通知失败")
 
@@ -170,17 +173,16 @@ class NotificationWorker(QThread):
                         await asyncio.sleep(self.settings.scan_interval)
                         continue
 
-                    current_ids = {n.id for n in notifs if n and hasattr(n, 'id')}
+                    current_ids = {n.id for n in notifs if n and hasattr(n, "id")}
 
                     for n in notifs:
-                        if not n or not hasattr(n, 'id'):
+                        if not n or not hasattr(n, "id"):
                             continue
 
                         if n.id in known_ids:
                             continue
 
                         try:
-                            # 检查是否只监控QQ
                             if self.settings.qq_only:
                                 app_name = ""
                                 try:
@@ -210,7 +212,11 @@ class NotificationWorker(QThread):
                                             text_elements = b.get_text_elements()
                                             if text_elements:
                                                 texts.extend(
-                                                    [t.text.strip() for t in text_elements if t and t.text]
+                                                    [
+                                                        t.text.strip()
+                                                        for t in text_elements
+                                                        if t and t.text
+                                                    ]
                                                 )
                             except Exception:
                                 pass
