@@ -80,7 +80,7 @@
     <message>
         <location filename="maingui2.py" line="164"/>
         <source>启用 UIA 模式</source>
-        <translation type="unfinished"></translation>
+        <translation>Eanble UIA Mode</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="173"/>
@@ -314,127 +314,130 @@
     <message>
         <location filename="maingui2.py" line="500"/>
         <source>重要提示音</source>
-        <translation type="unfinished"></translation>
+        <translation>Important alert sound</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="501"/>
         <source>呼叫提示音</source>
-        <translation type="unfinished"></translation>
+        <translation>Call ringtone</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="511"/>
         <source>QQListener</source>
-        <translation type="unfinished"></translation>
+        <translation>QQListener</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="513"/>
         <source>最好的QQ通知监控软件 - 班级群监控神器</source>
-        <translation type="unfinished"></translation>
+        <translation>The Best QQ Notification Monitoring Software - Classroom Group Monitoring Tool</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="516"/>
         <source>警告：本程序仅支持 NT QQ，旧版 QQ 无法弹出 Windows Toast</source>
-        <translation type="unfinished"></translation>
+        <translation>Warning: This program only supports NT QQ; older versions of QQ cannot trigger Windows Toast notifications.</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="522"/>
         <source>作者：株洲市南方中学 xxt8582753
 网站：https://xxtsoft.top
 邮箱：xxt8582753@126.com</source>
-        <translation type="unfinished"></translation>
+        <translation>Author: Zhuzhou Nanfang Middle School xxt8582753
+Website：https://xxtsoft.top
+Email：xxt8582753@126.com</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="524"/>
         <source>我的数据安全吗？</source>
-        <translation type="unfinished"></translation>
+        <translation>Is my data safe?</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="527"/>
         <source>我是绝对绝对不会出卖你的！</source>
-        <translation type="unfinished"></translation>
+        <translation>I absolutely, absolutely will not betray you!</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="530"/>
         <source>您的数据是安全的，您的QQ号，文件路径全部保存在本地，聊天记录等信息不会上传，也没有任何遥测和错误报告。
 QQListener 是开源软件，使用 MIT 许可证，您可以在 GitHub 上查看源代码</source>
-        <translation type="unfinished"></translation>
+        <translation>Your data is safe. Your QQ number and file paths are all stored locally. Chat history and other information will not be uploaded, and there is no telemetry or error reporting.
+QQListener is open-source software, licensed under the MIT License, and you can view the source code on GitHub.</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="532"/>
         <source>支持开发者</source>
-        <translation type="unfinished"></translation>
+        <translation>Support developers</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="535"/>
         <source>支持一下嘛</source>
-        <translation type="unfinished"></translation>
+        <translation>Give your support.</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="538"/>
         <source>我是一名高中生，没有稳定的经济来源，如果您喜欢这个项目，并且想要支持我继续开发和维护，可以考虑请我喝杯奶茶哦~
 </source>
-        <translation type="unfinished"></translation>
+        <translation>I am a high school student with no stable source of income. If you like this project and want to support me in continuing to develop and maintain it, you can consider buying me a cup of milk tea~</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="543"/>
         <location filename="maingui2.py" line="546"/>
         <source>QQListener 征集图标</source>
-        <translation type="unfinished"></translation>
+        <translation>QQListener Icon Collection</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="547"/>
         <source>目前这个图标有点丑，如果你有更好的，欢迎联系我！</source>
-        <translation type="unfinished"></translation>
+        <translation>This icon is a bit ugly at the moment. If you have a better one, feel free to contact me!</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="550"/>
         <source>清除缓存</source>
-        <translation type="unfinished"></translation>
+        <translation>Clear cache</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="552"/>
         <source>查看教程</source>
-        <translation type="unfinished"></translation>
+        <translation>View Tutorial</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="556"/>
         <source>提交翻译</source>
-        <translation type="unfinished"></translation>
+        <translation>Submit Translation</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="587"/>
         <source>输入后点击添加。也可使用回车键</source>
-        <translation type="unfinished"></translation>
+        <translation>Click Add after entering. You can also use the Enter key.</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="589"/>
         <source>添加</source>
-        <translation type="unfinished"></translation>
+        <translation>Add</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="590"/>
         <source>删除选中</source>
-        <translation type="unfinished"></translation>
+        <translation>Delete</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="608"/>
         <source>选择文件夹</source>
-        <translation type="unfinished"></translation>
+        <translation>Browser</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="613"/>
         <source>选择文件</source>
-        <translation type="unfinished"></translation>
+        <translation>Browser</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="630"/>
         <source>该项已存在</source>
-        <translation type="unfinished"></translation>
+        <translation>This item already exists</translation>
     </message>
     <message>
         <location filename="maingui2.py" line="712"/>
         <source>缓存已清除</source>
-        <translation type="unfinished"></translation>
+        <translation>Cache has been cleared</translation>
     </message>
 </context>
 <context>
