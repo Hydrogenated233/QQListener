@@ -100,20 +100,17 @@ class QQListenerApp:
         self.push_notification(data)
 
     def push_notification(self, data: dict):
-        """推送通知 - 使用通知管理器在同一进程中创建窗口"""
         try:
             self.notify_manager.show_notification(data)
         except Exception:
             logger.exception("推送通知失败")
 
     def exit(self):
-        """退出应用程序"""
         self.cleanup()
         if self.app:
             self.app.quit()
 
     def cleanup(self):
-        """清理资源"""
         self.notify_manager.close_all_notifications()
         if self.worker and self.worker.isRunning():
             self.worker.stop()

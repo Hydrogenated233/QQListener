@@ -1,10 +1,12 @@
 # QQListener - QQ通知监控软件
 
 > 让每一条重要通知都能被听见 - 班级群消息监听器
+> 本程序由 [@HxAbCd](https://0xabcd.dev) 使用 AI 重构，代码结构已发生较大变化
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![PySide6](https://img.shields.io/badge/PySide6-6.10+-green.svg)](https://doc.qt.io/qtforpython/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![NFZX](https://img.shields.io/badge/株洲市南方中学-参赛作品+-blue.svg)](http://jyt.hunan.gov.cn/sjyt/dhjyg/)
 
 ## ✨ 功能特性
 
@@ -65,7 +67,7 @@ QQListener 支持两种消息捕获模式：
 
 ### TTS 语音播报
 
-- **Edge TTS**: 基于神经网络的高质量语音，需要联网
+- **Edge TTS**: 基于神经网络的高质量语音，需要联网。目前已知很多操作系统无法使用
 - **系统 TTS**: 使用 Windows 自带语音引擎，离线可用
 
 > 提示: 如果 Edge TTS 无法使用，请在设置中切换到系统 TTS

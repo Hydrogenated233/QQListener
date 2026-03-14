@@ -1,8 +1,8 @@
 import os
 import sys
 
-from loguru import logger
 import pygame
+from loguru import logger
 from PySide6.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
@@ -96,8 +96,6 @@ class FilePreview(QFrame):
 
 
 class ThumbPreview(QFrame):
-    """QQ缩略图预览控件"""
-
     def __init__(self, file_path):
         logger.debug("当前 Pic_Path: {}", file_path)
         super().__init__()
@@ -181,8 +179,6 @@ class NotifyWindow(QWidget):
         self._play_tts()
 
     def _load_fonts(self):
-        """加载字体"""
-
         def load_font(path, fallback="Segoe UI"):
             if not os.path.exists(path):
                 logger.warning("字体文件不存在: {}", path)

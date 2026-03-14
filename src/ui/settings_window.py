@@ -142,11 +142,15 @@ class SettingsWindow(QWidget):
         layout = QVBoxLayout(widget)
 
         layout.addWidget(QLabel(self.tr("重要人物")))
-        self.list_persons = self._create_list(self.data.get("Important_Persons", self.settings.important_persons))
+        self.list_persons = self._create_list(
+            self.data.get("Important_Persons", self.settings.important_persons)
+        )
         layout.addWidget(self.list_persons)
 
         layout.addWidget(QLabel(self.tr("重要关键词")))
-        self.list_keywords = self._create_list(self.data.get("Important_Keywords", self.settings.important_keywords))
+        self.list_keywords = self._create_list(
+            self.data.get("Important_Keywords", self.settings.important_keywords)
+        )
         layout.addWidget(self.list_keywords)
 
         layout.addWidget(QLabel(self.tr("黑名单")))
@@ -195,19 +199,25 @@ class SettingsWindow(QWidget):
                 "light_yellow.xml",
             ]
         )
-        self.theme_setting_combo.setCurrentText(self.data.get("Theme_Setting_Combo", self.settings.theme_setting))
+        self.theme_setting_combo.setCurrentText(
+            self.data.get("Theme_Setting_Combo", self.settings.theme_setting)
+        )
         self.theme_setting_combo.currentIndexChanged.connect(self._on_setting_theme_changed)
         layout.addWidget(self.theme_setting_combo)
 
         layout.addWidget(QLabel(self.tr("通知样式")))
         self.theme_notify_combo = QComboBox()
         self.theme_notify_combo.addItems(["FluentDark", "FluentLight", "Material"])
-        self.theme_notify_combo.setCurrentText(self.data.get("Theme_Notify_Combo", self.settings.theme_notify))
+        self.theme_notify_combo.setCurrentText(
+            self.data.get("Theme_Notify_Combo", self.settings.theme_notify)
+        )
 
         self.notify_shadow = QCheckBox(self.tr("通知窗口启用阴影"))
         self.notify_shadow.setChecked(self.data.get("Notify_Shadow", self.settings.notify_shadow))
         self.notify_animation = QCheckBox(self.tr("通知窗口启用动画"))
-        self.notify_animation.setChecked(self.data.get("Notify_Animation", self.settings.notify_animation))
+        self.notify_animation.setChecked(
+            self.data.get("Notify_Animation", self.settings.notify_animation)
+        )
         self.notify_mask = QCheckBox(self.tr("通知窗口启用遮罩"))
         self.notify_mask.setChecked(self.data.get("Notify_Mask", self.settings.notify_mask))
         self.notify_label = QLineEdit(self.data.get("Notify_Label", self.settings.notify_label))
@@ -255,7 +265,9 @@ class SettingsWindow(QWidget):
         self.override = QCheckBox(self.tr("覆写通知样式表"))
         self.override.setChecked(self.data.get("Override_qss", self.settings.override_qss))
         self.override_layout.addWidget(self.override)
-        self.override_qss = QLineEdit(self.data.get("Override_Path", self.settings.override_qss_path))
+        self.override_qss = QLineEdit(
+            self.data.get("Override_Path", self.settings.override_qss_path)
+        )
         self.override_select = QPushButton(self.tr("浏览"))
         self.override_select.clicked.connect(lambda: self._select_file(self.override_qss))
         self.override_layout.addWidget(self.override_qss)
@@ -293,15 +305,21 @@ class SettingsWindow(QWidget):
 
         self.max_wait = QSpinBox()
         self.max_wait.setRange(1, 20)
-        self.max_wait.setValue(self.data.get("Max_Wait_Thumb_Time", self.settings.max_wait_thumb_time))
+        self.max_wait.setValue(
+            self.data.get("Max_Wait_Thumb_Time", self.settings.max_wait_thumb_time)
+        )
 
         self.duration_everyone = QSpinBox()
         self.duration_everyone.setRange(1000, 20000)
-        self.duration_everyone.setValue(self.data.get("Duration_Everyone", self.settings.duration_everyone))
+        self.duration_everyone.setValue(
+            self.data.get("Duration_Everyone", self.settings.duration_everyone)
+        )
 
         self.duration_important = QSpinBox()
         self.duration_important.setRange(1000, 30000)
-        self.duration_important.setValue(self.data.get("Duration_Important", self.settings.duration_important))
+        self.duration_important.setValue(
+            self.data.get("Duration_Important", self.settings.duration_important)
+        )
 
         self.tts = QCheckBox(self.tr("全局 TTS（语音播报） 开关"))
         self.tts.setChecked(self.data.get("TTS", self.settings.tts_enabled))
@@ -354,21 +372,19 @@ class SettingsWindow(QWidget):
         self.edge_test_btn.clicked.connect(self._on_edge_test)
         self.edge_test_layout.addWidget(self.edge_test_text)
         self.edge_test_layout.addWidget(self.edge_test_btn)
-
+        self.edge_tts_warning = QLabel(
+            self.tr(
+                "EdgeTTS 基于神经网络，需要联网，但可自定义效果，若不勾选使用系统自带 TTS（已知问题：EdgeTTS 音调和语速设为负数可能会报错，也不是所有系统支持EdgeTTS，若无声音请取消勾选此复选框）"
+            )
+        )
+        self.edge_tts_warning.setWordWarp(True)
         form.addRow(self.auto_thumb)
         form.addRow(self.always_on_top)
         form.addRow(self.tr("最大等待缩略图时间(s)"), self.max_wait)
         form.addRow(self.tr("普通通知时长(ms)"), self.duration_everyone)
         form.addRow(self.tr("重要通知时长(ms)"), self.duration_important)
         form.addRow(self.tts)
-        form.addRow(
-            self.edge_tts,
-            QLabel(
-                self.tr(
-                    "EdgeTTS 基于神经网络，需要联网，但可自定义效果，若不勾选使用系统自带 TTS（已知问题：EdgeTTS 音调和语速设为负数可能会报错）"
-                )
-            ),
-        )
+        form.addRow(self.edge_tts_warning)
         form.addRow(self.tr("EdgeTTS 音色"), self.edge_voice)
         form.addRow(self.tr("EdgeTTS 语速"), self.edge_rate)
         form.addRow(self.tr("EdgeTTS 音高"), self.edge_pitch)
@@ -384,12 +400,18 @@ class SettingsWindow(QWidget):
 
         self.calling = QCheckBox(self.tr("允许老师呼叫"))
         self.calling.setChecked(self.data.get("Calling", self.settings.calling_enabled))
-        self.calling_keyword = QLineEdit(self.data.get("Calling_Keyword", self.settings.calling_keyword))
+        self.calling_keyword = QLineEdit(
+            self.data.get("Calling_Keyword", self.settings.calling_keyword)
+        )
         self.calling_during = QSpinBox()
         self.calling_during.setRange(0, 999999)
-        self.calling_during.setValue(self.data.get("Calling_Duration", self.settings.calling_duration))
+        self.calling_during.setValue(
+            self.data.get("Calling_Duration", self.settings.calling_duration)
+        )
         self.calling_anim = QCheckBox(self.tr("呼叫启用动画"))
-        self.calling_anim.setChecked(self.data.get("Calling_Animation", self.settings.calling_animation))
+        self.calling_anim.setChecked(
+            self.data.get("Calling_Animation", self.settings.calling_animation)
+        )
         self.calling_bpm = QSpinBox()
         self.calling_bpm.setRange(0, 1000)
         self.calling_bpm.setValue(self.data.get("Calling_BPM", self.settings.calling_bpm))
@@ -415,7 +437,9 @@ class SettingsWindow(QWidget):
         widget = QWidget()
         form = QFormLayout(widget)
 
-        self.sound_normal = QLineEdit(self.data.get("Sound_Effect_Normal", self.settings.sound_normal))
+        self.sound_normal = QLineEdit(
+            self.data.get("Sound_Effect_Normal", self.settings.sound_normal)
+        )
         btn1 = QPushButton(self.tr("浏览"))
         btn1.clicked.connect(lambda: self._select_file(self.sound_normal))
         btn3 = QPushButton(self.tr("试听"))
@@ -426,7 +450,9 @@ class SettingsWindow(QWidget):
         row1.addWidget(btn1)
         row1.addWidget(btn3)
 
-        self.sound_important = QLineEdit(self.data.get("Sound_Effect_Important", self.settings.sound_important))
+        self.sound_important = QLineEdit(
+            self.data.get("Sound_Effect_Important", self.settings.sound_important)
+        )
         btn2 = QPushButton(self.tr("浏览"))
         btn2.clicked.connect(lambda: self._select_file(self.sound_important))
         btn4 = QPushButton(self.tr("试听"))

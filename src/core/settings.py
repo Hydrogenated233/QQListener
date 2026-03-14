@@ -6,8 +6,6 @@ from loguru import logger
 
 
 class Settings:
-    """设置管理单例类"""
-
     _instance: "Settings | None" = None
     _initialized: bool = False
 
@@ -83,7 +81,6 @@ class Settings:
 
     @property
     def thumb_path(self) -> str | None:
-        """获取缩略图路径"""
         tencent_path = self.get("Tencent_Files_Path", "")
         user_qq = self.get("User_QQ", "")
         if tencent_path and user_qq:

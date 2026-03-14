@@ -7,13 +7,9 @@ from src.ui.notify_window import NotifyWindow
 
 
 class NotifyManager(QObject):
-    """通知窗口管理器 - 单例模式"""
-
     _instance = None
     _initialized = False
-
-    # 信号
-    notification_closed = Signal(str)  # 通知关闭信号，参数为通知ID
+    notification_closed = Signal(str)
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -30,11 +26,6 @@ class NotifyManager(QObject):
         NotifyManager._initialized = True
 
     def show_notification(self, data: dict) -> NotifyWindow:
-        """
-        显示通知窗口
-        在同一进程中创建新窗口，不使用IPC或多进程
-        """
-        # 创建通知窗口
         win = NotifyWindow(data)
 
         # 应用阴影效果
