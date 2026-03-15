@@ -1,16 +1,15 @@
+import asyncio
 import os
-import subprocess
 
-from loguru import logger
+import edge_tts
 import pygame
+from loguru import logger
 from PySide6.QtCore import QThread, Signal
 
 from src.core.settings import get_settings
 
 
 class TTSThread(QThread):
-    """TTS线程"""
-
     finished_signal = Signal(str)
 
     def __init__(self, text: str, parent=None):
@@ -34,42 +33,37 @@ class TTSThread(QThread):
             self.finished_signal.emit("")
 
     def _run_edge_tts(self):
-        """使用Edge TTS"""
+        """使用Edge TTS (模块调用)"""
         output_file = "tts_temp.mp3"
 
-        voice = self.settings.edge_voice
+        voice = self.settings.edge_voice or "zh-CN-XiaoyiNeural"
         rate = self.settings.edge_rate
         pitch = self.settings.edge_pitch
         volume = self.settings.edge_volume
 
-        if not voice:
-            voice = "zh-CN-XiaoyiNeural"
-
         safe_text = self.text.replace('"', "'") if self.text else ""
-
         if not safe_text:
             self.finished_signal.emit("")
             return
 
-        cmd = (
-            f"edge-tts "
-            f'--voice "{voice}" '
-            f'--rate "{rate}" '
-            f'--pitch "{pitch}" '
-            f'--volume "{volume}" '
-            f'--text "{safe_text}" '
-            f'--write-media "{output_file}"'
-        )
+        async def run_tts():
+            try:
+                communicate = edge_tts.Communicate(
+                    text=safe_text,
+                    voice=voice,
+                    rate=rate,
+                    pitch=pitch,
+                    volume=volume,
+                )
+                await communicate.save(output_file)
+                self.finished_signal.emit(output_file)
+            except Exception:
+                logger.exception("Edge TTS执行失败")
+                self.finished_signal.emit("")
 
-        try:
-            subprocess.run(cmd, shell=True, check=True)
-            self.finished_signal.emit(output_file)
-        except subprocess.CalledProcessError:
-            logger.exception("Edge TTS执行失败")
-            self.finished_signal.emit("")
+        asyncio.run(run_tts())
 
     def _run_system_tts(self):
-        """使用系统TTS"""
         import pyttsx3
 
         try:
@@ -88,8 +82,6 @@ class TTSThread(QThread):
 
 
 class TTSManager:
-    """TTS管理器"""
-
     def __init__(self):
         self.settings = get_settings()
         self._current_thread: TTSThread | None = None

@@ -3,12 +3,11 @@ import os
 import time
 
 from loguru import logger
+
 from src.core.settings import get_settings
 
 
 class MessageProcessor:
-    """消息处理器"""
-
     def __init__(self) -> None:
         self.settings = get_settings()
         self.seen: dict[str, float] = {}
@@ -16,10 +15,6 @@ class MessageProcessor:
         self.last_file_mtime: dict[str, float] = {}
 
     def process_notification(self, texts: list[str]) -> dict | None:
-        """
-        处理通知消息
-        返回通知数据字典，如果不需要显示则返回None
-        """
         if not texts or not isinstance(texts, list):
             return None
 
@@ -29,48 +24,43 @@ class MessageProcessor:
 
         key = hashlib.md5("|".join(norm).encode("utf-8")).hexdigest()
         now = time.time()
-
-        # 检查是否在活跃列表中
         if key in self.active_toasts:
             return None
-
-        # 检查冷却时间
         cooldown = self.settings.cooldown
         if key in self.seen and now - self.seen[key] < cooldown:
             return None
 
         self.seen[key] = now
         self.active_toasts.add(key)
-
-        # 检查黑名单
         message_text = "\n".join(texts)
         blacklist = self.settings.blacklist
-        if blacklist and isinstance(blacklist, list) and any(k in message_text for k in blacklist if k):
+        if (
+            blacklist
+            and isinstance(blacklist, list)
+            and any(k in message_text for k in blacklist if k)
+        ):
             return None
-
-        # 判断消息优先级
         important = False
         calling = False
         duration = self.settings.duration_everyone
-
-        # 检查是否是呼叫消息
         calling_keyword = self.settings.calling_keyword
         if self.settings.calling_enabled and calling_keyword and calling_keyword in message_text:
             duration = self.settings.calling_duration
             important = True
             calling = True
         else:
-            # 检查是否是重要人物或关键词
             sender = texts[0] if texts else ""
             important_persons = self.settings.important_persons
             important_keywords = self.settings.important_keywords
 
             is_important_person = (
-                important_persons and isinstance(important_persons, list)
+                important_persons
+                and isinstance(important_persons, list)
                 and any(p in sender for p in important_persons if p)
             )
             is_important_keyword = (
-                important_keywords and isinstance(important_keywords, list)
+                important_keywords
+                and isinstance(important_keywords, list)
                 and any(k in message_text for k in important_keywords if k)
             )
             is_at_me = self.settings.someone_at_me and "有人@我" in sender

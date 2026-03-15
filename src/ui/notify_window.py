@@ -196,21 +196,15 @@ class NotifyWindow(QWidget):
         self.msg_family = load_font(self.settings.notify_message_font)
 
     def init_ui(self):
-        """初始化UI"""
-        # 基础窗口设置
         if self.settings.always_on_top:
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         else:
             self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-
-        # 获取屏幕尺寸，全屏覆盖但背景透明
         screen_geo = QApplication.primaryScreen().geometry()
         self.setGeometry(screen_geo)
 
         style = PRIORITY_STYLES.get(self.data.get("Priority", 2)) or PRIORITY_STYLES[2]
-
-        # 遮罩层（全屏蒙版）
         if style and style.get("overlay") and self.settings.notify_mask:
             self.overlay = QWidget(self)
             self.overlay.setGeometry(0, 0, self.width(), self.height())
@@ -394,8 +388,6 @@ class NotifyWindow(QWidget):
             QTimer.singleShot(self.duration, self.close_animation)
 
     def close_animation(self):
-        """关闭动画"""
-        # 停止所有正在播放的音效
         try:
             pygame.mixer.stop()
         except Exception:
@@ -410,12 +402,10 @@ class NotifyWindow(QWidget):
         self.animations.append(anim)
 
     def on_ok(self):
-        """确认按钮点击"""
         logger.info("用户点击了确认: {}", self.data.get("Sender"))
         self.close_animation()
 
     def _play_sound(self):
-        """播放提示音 - 使用Sound对象支持同时播放多个音频"""
         try:
             if self.data.get("Calling"):
                 sound_file = self.settings.sound_calling
@@ -425,31 +415,27 @@ class NotifyWindow(QWidget):
                 sound_file = self.settings.sound_normal
 
             if sound_file and os.path.exists(sound_file):
-                # 使用Sound对象而不是music，支持同时播放多个音频
                 sound = pygame.mixer.Sound(sound_file)
                 if self.data.get("Calling"):
-                    sound.play(-1)  # 循环播放
+                    sound.play(-1)
                 else:
                     sound.play()
         except Exception:
             logger.exception("播放声音失败")
 
     def _play_tts(self):
-        """播放TTS"""
         message = self.data.get("Message", "")
         if message:
             self.tts_manager.speak(message)
 
 
 def show_notification(data: dict) -> NotifyWindow:
-    """显示通知窗口 - 用于独立运行或兼容旧代码"""
     app = QApplication.instance()
     if not app:
         app = QApplication(sys.argv)
 
     settings = get_settings()
 
-    # 应用阴影效果
     def apply_shadow(win):
         if settings.notify_shadow:
             shadow = QGraphicsDropShadowEffect()

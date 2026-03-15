@@ -377,7 +377,7 @@ class SettingsWindow(QWidget):
                 "EdgeTTS 基于神经网络，需要联网，但可自定义效果，若不勾选使用系统自带 TTS（已知问题：EdgeTTS 音调和语速设为负数可能会报错，也不是所有系统支持EdgeTTS，若无声音请取消勾选此复选框）"
             )
         )
-        self.edge_tts_warning.setWordWarp(True)
+        self.edge_tts_warning.setWordWrap(True)
         form.addRow(self.auto_thumb)
         form.addRow(self.always_on_top)
         form.addRow(self.tr("最大等待缩略图时间(s)"), self.max_wait)
@@ -394,7 +394,6 @@ class SettingsWindow(QWidget):
         return widget
 
     def _create_calling_tab(self):
-        """呼叫设置标签页"""
         widget = QWidget()
         form = QFormLayout(widget)
 
@@ -433,7 +432,6 @@ class SettingsWindow(QWidget):
         return widget
 
     def _create_sound_tab(self):
-        """声音设置标签页"""
         widget = QWidget()
         form = QFormLayout(widget)
 
@@ -481,7 +479,6 @@ class SettingsWindow(QWidget):
         return widget
 
     def _create_debug_tab(self):
-        """调试设置标签页"""
         container = QWidget()
         stack = QStackedLayout(container)
         content = QWidget()
