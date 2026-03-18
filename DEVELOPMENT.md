@@ -2,13 +2,13 @@
 
 本文档面向开发者，介绍如何搭建开发环境、理解项目架构以及进行二次开发。
 
-## 📋 环境要求
+## 环境要求
 
 - **Python**: 3.11+
 - **操作系统**: Windows 10 1903+ (Win7/8/8.1 不支持)
 - **IDE**: 推荐使用 VS Code 或 PyCharm
 
-## 🚀 快速开始
+## 快速开始
 
 ### 1. 克隆仓库
 
@@ -29,7 +29,7 @@ uv sync
 uv run main.py
 ```
 
-## 📁 项目结构详解
+## 项目结构详解
 
 ```
 QQListener/
@@ -56,7 +56,7 @@ QQListener/
 └── setting.json              # 用户配置文件（运行时生成）
 ```
 
-## 🏗️ 架构设计
+## 架构设计
 
 ### 整体架构
 
@@ -92,7 +92,7 @@ QQListener/
    NotifyWindow → TTSManager → TTSThread → pygame 播放
 ```
 
-## 🔧 核心类详解
+## 核心类详解
 
 ### Settings - 配置管理（单例模式）
 
@@ -255,7 +255,7 @@ tts.speak("您有一条新消息")  # 异步播放
 tts.stop()  # 停止播放
 ```
 
-## 📝 代码规范
+## 代码规范
 
 项目使用 **Ruff** 进行代码检查和格式化。
 
@@ -311,7 +311,7 @@ def process_data(data: dict[str, Any] | None) -> dict | None:
         return None
 ```
 
-## 🔌 扩展开发
+## 扩展开发
 
 ### 添加新的通知捕获模式
 
@@ -398,7 +398,7 @@ PRIORITY_STYLES = {
 
 或使用 QSS 覆写功能（在设置中启用）。
 
-## 🐛 调试技巧
+## 调试技巧
 
 ### 启用调试输出
 
@@ -435,7 +435,7 @@ for pane in desktop.GetChildren():
     print(f"找到控件: {pane.ClassName}")
 ```
 
-## 📦 打包发布
+## 打包发布
 
 ### 使用 PyInstaller
 
@@ -453,14 +453,14 @@ pyinstaller --onefile --windowed --icon=icon.ico \
     main.py
 ```
 
-## 📚 相关资源
+## 相关资源
 
 - [PySide6 文档](https://doc.qt.io/qtforpython/)
 - [Windows SDK 通知 API](https://docs.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/)
 - [Edge TTS 文档](https://github.com/rany2/edge-tts)
 - [项目主页](https://xxtsoft.top/support/qqlistener)
 
-## 💬 联系方式
+## 联系方式
 
 - 作者: xxt8582753
 - 邮箱: xxt8582753@126.com
@@ -468,4 +468,4 @@ pyinstaller --onefile --windowed --icon=icon.ico \
 
 ---
 
-**Happy Coding! 🎉**
+**Happy Coding! **
