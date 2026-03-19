@@ -533,7 +533,7 @@ class SettingsWindow(QWidget):
 
         self.title = QLabel(self.tr("QQListener"))
         self.title.setStyleSheet("font-size: 20px; font-weight: 600;")
-        self.subtitle = QLabel(self.tr("最好的QQ通知监控软件 - 班级群监控神器 v1.0 20260217"))
+        self.subtitle = QLabel(self.tr("最好的QQ通知监控软件 - 班级群监控神器 v1.1 20260319"))
         self.subtitle.setStyleSheet("font-size: 16px")
 
         self.author_title = QLabel(
