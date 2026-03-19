@@ -3,24 +3,19 @@
     "Cooldown": 3,
     "App": "QQ",
     "Version": "1.0",
-    "Tencent_Files_Path": "C:\\Users\\Administrator\\Documents\\Tencent Files",
-    "User_QQ": "2692386819",
+    "Tencent_Files_Path": "",
+    "User_QQ": "",
     "UIAMode": false,
-    "Important_Persons": [
-        "AbCd",
-        "BSOD-MEMZ"
-    ],
+    "Important_Persons": [],
     "Important_Keywords": [
         "电话",
         "作业",
         "答案"
     ],
-    "BlackList": [
-        "1"
-    ],
-    "Sound_Effect_Normal": "D:/QQListener/asset/notify_sound.mp3",
-    "Sound_Effect_Important": "D:/QQListener/asset/important_sound.mp3",
-    "Sound_Calling": "D:/QQListener/asset/calling_sound.mp3",
+    "BlackList": [],
+    "Sound_Effect_Normal": "asset/notify_sound.mp3",
+    "Sound_Effect_Important": "asset/important_sound.mp3",
+    "Sound_Calling": "asset/calling_sound.mp3",
     "Auto_Show_Thumb": false,
     "icon_ok": "asset/icon_ok.png",
     "icon_cancel": "asset/icon_cancel.png",
@@ -32,7 +27,7 @@
     "Theme_Notify_Combo": "FluentDark",
     "Notify_Shadow": true,
     "Notify_Animation": true,
-    "QQ_Only": false,
+    "QQ_Only": true,
     "Notify_Label": "xxtsoft QQListener",
     "Someone_At_Me": true,
     "Calling": true,
