@@ -1,9 +1,8 @@
+import os
 import sys
 
-import pygame
-
-# from loguru import logger
-from PySide6.QtCore import QTranslator
+from loguru import logger
+from PySide6.QtCore import QTimer, QTranslator
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -14,6 +13,14 @@ from src.core.worker import NotificationWorker
 from src.ui.notify_manager import get_notify_manager
 from src.ui.settings_window import SettingsWindow
 from src.ui.tray_icon import TrayIcon
+
+# 懒加载pygame，避免导入即崩溃
+try:
+    import pygame
+    _HAS_PYGAME = True
+except ImportError:
+    _HAS_PYGAME = False
+    pygame = None
 
 
 class QQListenerApp:
@@ -26,14 +33,18 @@ class QQListenerApp:
         self.tray_icon: TrayIcon | None = None
         self.translator: QTranslator | None = None
         self.notify_manager = get_notify_manager()
+        self._running = True
 
     def initialize(self) -> bool:
         setup_logging()
 
-        try:
-            pygame.mixer.init()
-        except Exception:
-            logger.exception("初始化音频失败")
+        if _HAS_PYGAME:
+            try:
+                pygame.mixer.init()
+            except Exception:
+                logger.exception("初始化音频失败")
+        else:
+            logger.warning("pygame未安装，跳过音频初始化")
 
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
@@ -51,8 +62,31 @@ class QQListenerApp:
 
         if not self.tray_icon.create():
             logger.error("创建托盘图标失败")
+            QMessageBox.warning(
+                None, "QQListener",
+                "系统托盘图标创建失败，程序可能在后台运行但没有可见图标。\n请重启电脑或检查系统托盘设置。"
+            )
+        else:
+            logger.info("托盘图标创建成功")
+
+        # 看门狗：每5秒检查 worker 线程是否还在运行
+        self._watchdog = QTimer()
+        self._watchdog.timeout.connect(self._watchdog_check)
+        self._watchdog.start(5000)
 
         return True
+
+    def _watchdog_check(self):
+        """检查 worker 是否存活"""
+        if self.worker and not self.worker.isRunning() and self._running:
+            logger.warning("worker线程已停止，尝试重启...")
+            try:
+                self.worker = NotificationWorker()
+                self.worker.notification_ready.connect(self._on_notification_ready)
+                self.worker.start()
+                logger.info("worker线程重启成功")
+            except Exception:
+                logger.exception("worker线程重启失败")
 
     def _load_translator(self):
         lang = self.settings.language
@@ -70,17 +104,8 @@ class QQListenerApp:
             logger.error("初始化失败")
             sys.exit(1)
 
-        if self.settings.is_first_run():
-            if self.settings_window is None:
-                self.settings_window = SettingsWindow()
-            QMessageBox.information(
-                self.settings_window,
-                self.settings_window.tr("你是新来的吧？"),
-                self.settings_window.tr(
-                    '这个程序配置较为复杂，所以建议你先看了教程再来用喵~\n请点击"关于"选项卡并点击"查看教程"按钮\n第一次保存设置后这条消息将不再出现\n\n\n本程序免费开源，如果你是花钱买的那一定是被骗了！'
-                ),
-            )
-            self.show_settings()
+        # 固定弹设置窗口，确保能看到界面（诊断用）
+        self.show_settings()
         if self.worker:
             self.worker.start()
         exit_code = self.app.exec() if self.app else 1
@@ -90,7 +115,8 @@ class QQListenerApp:
     def show_settings(self):
         if self.settings_window is None or not self.settings_window.isVisible():
             self.settings_window = SettingsWindow()
-            self.settings_window.setWindowIcon(QIcon("icon.ico"))
+            if os.path.exists("icon.ico"):
+                self.settings_window.setWindowIcon(QIcon("icon.ico"))
             self.settings_window.show()
         else:
             self.settings_window.raise_()
@@ -111,6 +137,9 @@ class QQListenerApp:
             self.app.quit()
 
     def cleanup(self):
+        self._running = False
+        if self._watchdog:
+            self._watchdog.stop()
         self.notify_manager.close_all_notifications()
         if self.worker and self.worker.isRunning():
             self.worker.stop()

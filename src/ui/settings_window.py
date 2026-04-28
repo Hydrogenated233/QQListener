@@ -1,9 +1,11 @@
 import os
 import subprocess
+import sys
 import time
 import webbrowser
 
 import pygame
+from loguru import logger
 import pyttsx3
 from PySide6.QtCore import Qt, QTranslator
 from PySide6.QtGui import QPixmap
@@ -40,6 +42,17 @@ class SettingsWindow(QWidget):
         super().__init__(parent)
         self.settings = get_settings()
         self.signals = get_signals()
+
+        # 全局异常处理
+        import traceback
+        self._orig_excepthook = sys.excepthook
+        def _excepthook(typ, val, tb):
+            with open(r"C:\Users\Hydrogenated233\.openclaw\workspace\qq_crash.txt", "a", encoding="utf-8") as f:
+                f.write(f"=== SettingsWindow crash ===\n")
+                traceback.print_exception(typ, val, tb, file=f)
+            if self._orig_excepthook:
+                self._orig_excepthook(typ, val, tb)
+        sys.excepthook = _excepthook
 
         self.setWindowTitle(self.tr("QQ Listener - 设置"))
         self.resize(720, 600)
@@ -476,6 +489,21 @@ class SettingsWindow(QWidget):
         row3.addWidget(btn5)
         row3.addWidget(btn6)
 
+        # 音量控制
+        self.sound_volume = QSlider(Qt.Horizontal)
+        self.sound_volume.setRange(0, 100)
+        vol = int(self.data.get("Sound_Volume", self.settings.sound_volume) * 100)
+        self.sound_volume.setValue(vol)
+        self.volume_label = QLabel(self.tr(f"音量: {vol}%"))
+        self.sound_volume.valueChanged.connect(
+            lambda v: self.volume_label.setText(self.tr(f"音量: {v}%"))
+        )
+
+        row_vol = QHBoxLayout()
+        row_vol.addWidget(self.volume_label)
+        row_vol.addWidget(self.sound_volume)
+
+        form.addRow(self.tr("音量"), row_vol)
         form.addRow(self.tr("普通提示音"), row1)
         form.addRow(self.tr("重要提示音"), row2)
         form.addRow(self.tr("呼叫提示音"), row3)
@@ -653,6 +681,14 @@ class SettingsWindow(QWidget):
         list_widget = container.list_widget
         return [list_widget.item(i).text() for i in range(list_widget.count())]
 
+    def closeEvent(self, event):
+        """关闭时隐藏到托盘而不是退出"""
+        try:
+            event.ignore()
+            self.hide()
+        except Exception:
+            pass
+
     def _select_path(self):
         """选择文件夹"""
         path = QFileDialog.getExistingDirectory(self, self.tr("选择文件夹"))
@@ -669,8 +705,14 @@ class SettingsWindow(QWidget):
         """测试声音"""
         path = line.text().strip()
         if path and os.path.exists(path):
-            pygame.mixer.music.load(path)
-            pygame.mixer.music.play()
+            try:
+                s = pygame.mixer.Sound(path)
+                vol = (self.sound_volume.value() / 100.0) if hasattr(self, 'sound_volume') and self.sound_volume else 1.0
+                s.set_volume(vol)
+                s.play()
+            except Exception as e:
+                logger.exception("试听声音失败")
+                QMessageBox.warning(self, self.tr("错误"), self.tr(f"播放失败: {e}"))
 
     def _test_exe(self, name):
         """测试程序是否运行"""
@@ -783,12 +825,12 @@ class SettingsWindow(QWidget):
         )
 
         subprocess.run(cmd, shell=True, check=True)
-        pygame.mixer.init()
-        pygame.mixer.music.load(OUTPUT_FILE)
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
-        pygame.mixer.quit()
+        s = pygame.mixer.Sound(OUTPUT_FILE)
+        vol = (self.sound_volume.value() / 100.0) if hasattr(self, 'sound_volume') and self.sound_volume else 1.0
+        s.set_volume(vol)
+        s.play()
+        import time
+        time.sleep(1)
 
     def _apply_theme(self):
         """应用主题"""
@@ -818,6 +860,7 @@ class SettingsWindow(QWidget):
                 "Important_Keywords": self._get_list(self.list_keywords),
                 "BlackList": self._get_list(self.list_black),
                 "WhiteList": self._get_list(self.list_white),
+                "Sound_Volume": self.sound_volume.value() / 100.0,
                 "Sound_Effect_Normal": self.sound_normal.text(),
                 "Sound_Effect_Important": self.sound_important.text(),
                 "Sound_Calling": self.sound_calling.text(),

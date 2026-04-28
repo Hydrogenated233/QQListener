@@ -416,6 +416,9 @@ class NotifyWindow(QWidget):
 
             if sound_file and os.path.exists(sound_file):
                 sound = pygame.mixer.Sound(sound_file)
+                vol = self.settings.sound_volume
+                logger.info("播放声音: 音量={}", vol)
+                sound.set_volume(vol)
                 if self.data.get("Calling"):
                     sound.play(-1)
                 else:

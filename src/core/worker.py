@@ -1,9 +1,11 @@
 import asyncio
 import hashlib
+import os
 import sys
+import time
 
 from loguru import logger
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal, QTimer
 
 from src.core.settings import get_settings
 from src.core.signals import get_signals
@@ -22,16 +24,22 @@ class NotificationWorker(QThread):
         self.processor = MessageProcessor()
         self._running = True
         self._is_win11 = sys.getwindowsversion().build >= 22000
+        # 看门狗：记录上次循环心跳时间（UIA模式下最快0.3秒一次）
+        self._last_heartbeat = 0.0
 
     def run(self):
-        """线程主循环"""
-        try:
-            if self.settings.uia_mode:
-                asyncio.run(self._run_uia_mode())
-            else:
-                asyncio.run(self._run_winsdk_mode())
-        except Exception:
-            logger.exception("工作线程异常")
+        """线程主循环（带自动重启）"""
+        while self._running:
+            try:
+                if self.settings.uia_mode:
+                    asyncio.run(self._run_uia_mode())
+                else:
+                    asyncio.run(self._run_winsdk_mode())
+            except Exception:
+                logger.exception("工作线程异常，将在3秒后重启")
+            # 线程退出后等待3秒自动重启（除非收到停止信号）
+            if self._running:
+                self.msleep(3000)
 
     def stop(self):
         """停止工作线程"""
@@ -63,6 +71,7 @@ class NotificationWorker(QThread):
                         self.notification_ready.emit(result)
 
                 self.processor.update_active_toasts(current_found_keys)
+                self._last_heartbeat = time.time()
 
             except Exception:
                 logger.exception("UIA异常")
@@ -232,6 +241,9 @@ class NotificationWorker(QThread):
                         known_ids.add(n.id)
 
                     known_ids &= current_ids
+
+                    known_ids &= current_ids
+                    self._last_heartbeat = time.time()
 
                 except Exception:
                     logger.exception("WinSDK异常")

@@ -57,6 +57,10 @@ logs/
 *.spec
 *.exe
 *.manifest
+build_tmp/
+
+# Test files
+test_*.py
 
 # Misc
 .DS_Store

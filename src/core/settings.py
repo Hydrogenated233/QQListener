@@ -189,6 +189,11 @@ class Settings:
         return str(result) if result else "+0%"
 
     @property
+    def sound_volume(self) -> float:
+        result = self.get("Sound_Volume", 1.0)
+        return float(result) if result else 1.0
+
+    @property
     def duration_everyone(self) -> int:
         result = self.get("Duration_Everyone", 5000)
         return int(result) if isinstance(result, (int, float)) else 5000

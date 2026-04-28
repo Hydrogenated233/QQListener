@@ -1,6 +1,8 @@
+import os
+
 from loguru import logger
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtGui import QAction, QCursor, QIcon
+from PySide6.QtCore import Qt, QObject, Signal
+from PySide6.QtGui import QAction, QCursor, QIcon, QPixmap
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
 from src.core.settings import get_settings
@@ -23,7 +25,15 @@ class TrayIcon(QObject):
         try:
             # 创建托盘图标
             self._tray_icon = QSystemTrayIcon(self)
-            self._tray_icon.setIcon(QIcon("icon.ico"))
+            # 加载图标，如果文件不存在则用内存图标
+            if os.path.exists("icon.ico"):
+                icon = QIcon("icon.ico")
+            else:
+                icon = QIcon()
+                pm = QPixmap(16, 16)
+                pm.fill(Qt.blue)
+                icon.addPixmap(pm)
+            self._tray_icon.setIcon(icon)
             self._tray_icon.setToolTip("QQListener")
 
             # 创建右键菜单
