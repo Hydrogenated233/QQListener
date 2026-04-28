@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from loguru import logger
 from PySide6.QtCore import QTimer, QTranslator
@@ -152,5 +153,19 @@ class QQListenerApp:
 
 
 def run_app():
-    app = QQListenerApp()
-    app.run()
+    """带自动重启的入口函数"""
+    max_restarts = 10
+    restart_count = 0
+    while restart_count < max_restarts:
+        try:
+            app = QQListenerApp()
+            app.run()
+        except SystemExit:
+            # QQListenerApp.run() 正常调用 sys.exit —— 视为正常退出
+            break
+        except Exception:
+            logger.exception(f"程序崩溃 (第{restart_count+1}次)，5秒后自动重启")
+            restart_count += 1
+            time.sleep(5)
+    if restart_count >= max_restarts:
+        logger.error(f"程序连续崩溃{max_restarts}次，停止自动重启")
